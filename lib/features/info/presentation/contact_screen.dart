@@ -64,129 +64,170 @@ class _ContactScreenState extends State<ContactScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Form Kartı - Tam Genişlik
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Ad Soyad'),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        hintText: 'Ör: Dr. Ali Yılmaz',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text('E-posta'),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        hintText: 'ornek@mail.com',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text('Konu'),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: _subjectController,
-                      decoration: const InputDecoration(
-                        hintText: 'Ör: Model doğruluğu hakkında',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text('Mesajınız'),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: _messageController,
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Görüş, öneri veya teknik talebinizi yazabilirsiniz.',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _isSending ? null : _send,
-                      icon: _isSending
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
+            // Yatay yerleşim: Sol - Form, Sağ - Bilgi kartları
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sol kart - İletişim formu
+                Expanded(
+                  flex: 2,
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.mail_outline,
+                                  color: AppColors.primary, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Bize Ulaşın',
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                            )
-                          : const Icon(Icons.send),
-                      label: const Text('Gönder'),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('Ad Soyad'),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              hintText: 'Ör: Dr. Ali Yılmaz',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text('E-posta'),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _emailController,
+                            decoration: const InputDecoration(
+                              hintText: 'ornek@mail.com',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text('Konu'),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _subjectController,
+                            decoration: const InputDecoration(
+                              hintText: 'Ör: Model doğruluğu hakkında',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text('Mesajınız'),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _messageController,
+                            maxLines: 5,
+                            decoration: const InputDecoration(
+                              hintText:
+                                  'Görüş, öneri veya teknik talebinizi yazabilirsiniz.',
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _isSending ? null : _send,
+                            icon: _isSending
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.send),
+                            label: const Text('Gönder'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 16),
+                const SizedBox(width: 16),
 
-            // İletişim Bilgileri Kartı - Tam Genişlik
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    _ContactInfo(
-                      icon: Icons.email,
-                      label: 'E-posta:',
-                      value: '0xfatihalp@gmail.com',
-                    ),
-                    SizedBox(height: 12),
-                    _ContactInfo(
-                      icon: Icons.phone,
-                      label: 'Telefon:',
-                      value: '+90 (552) 440 46 36',
-                    ),
-                    SizedBox(height: 12),
-                    _ContactInfo(
-                      icon: Icons.location_on,
-                      label: 'Adres:',
-                      value:
-                          'Lalapaşa Mahallesi Mazi Sokak Birlik Apartmanı daire:3 Yakutiye/Erzurum',
-                    ),
-                  ],
+                // Sağ sütun - İletişim bilgileri + Çalışma saatleri
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    children: [
+                      // İletişim Bilgileri Kartı
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Row(
+                                children: [
+                                  Icon(Icons.contact_phone,
+                                      color: AppColors.primary, size: 18),
+                                  SizedBox(width: 8),
+                                  Text('İletişim Bilgileri',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              SizedBox(height: 12),
+                              _ContactInfo(
+                                icon: Icons.email,
+                                label: 'E-posta:',
+                                value: '0xfatihalp@gmail.com',
+                              ),
+                              SizedBox(height: 12),
+                              _ContactInfo(
+                                icon: Icons.phone,
+                                label: 'Telefon:',
+                                value: '+90 (552) 440 46 36',
+                              ),
+                              SizedBox(height: 12),
+                              _ContactInfo(
+                                icon: Icons.location_on,
+                                label: 'Adres:',
+                                value:
+                                    'Lalapaşa Mahallesi Mazi Sokak Birlik Apartmanı daire:3 Yakutiye/Erzurum',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Çalışma Saatleri Kartı
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Row(
+                                children: [
+                                  Icon(Icons.access_time,
+                                      color: AppColors.primary, size: 18),
+                                  SizedBox(width: 8),
+                                  Text('Çalışma Saatleri',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              SizedBox(height: 12),
+                              Text('• Pazartesi - Cuma: 09:00 - 18:00',
+                                  style: TextStyle(fontSize: 13)),
+                              SizedBox(height: 4),
+                              Text('• Hafta sonu: Sadece acil teknik destek',
+                                  style: TextStyle(fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Çalışma Saatleri Kartı - Tam Genişlik
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Row(
-                      children: [
-                        Icon(Icons.access_time,
-                            color: AppColors.primary, size: 18),
-                        SizedBox(width: 8),
-                        Text('Çalışma Saatleri',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Text('• Pazartesi - Cuma: 09:00 - 18:00',
-                        style: TextStyle(fontSize: 13)),
-                    SizedBox(height: 4),
-                    Text('• Hafta sonu: Sadece acil teknik destek',
-                        style: TextStyle(fontSize: 13)),
-                  ],
-                ),
-              ),
+              ],
             ),
           ],
         ),
