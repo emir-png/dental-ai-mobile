@@ -234,7 +234,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  '⚠ Bu rapor yalnızca bilgi amaçlıdır. Kesin tanı için uzman hekime başvurunuz.',
+                  'UYARI: Bu rapor yalnizca bilgi amaclidir. Kesin tani icin uzman hekime basvurunuz.',
                   style: const pw.TextStyle(
                     color: PdfColors.grey600,
                     fontSize: 8,
@@ -271,7 +271,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     pw.SizedBox(width: 24),
                     _infoCell('Oluşturulma', generatedAt, primaryColor),
                     pw.SizedBox(width: 24),
-                    _infoCell('Durum', 'Tamamlandı ✓', successColor),
+                    _infoCell('Durum', 'Tamamlandi', successColor),
                   ],
                 ),
               ),
@@ -561,10 +561,13 @@ class _ResultsScreenState extends State<ResultsScreen> {
         ),
       );
 
-      // PDF'i paylaş / önizle
+      // PDF bytes'ını önceden üret — hata varsa Dart catch bloğu yakalar
+      final pdfBytes = await doc.save();
+
+      // PDF'i önizle / paylaş
       await Printing.layoutPdf(
-        onLayout: (_) async => doc.save(),
-        name: 'AI_Dental_Rapor_${widget.analysisId}_$generatedAt.pdf',
+        onLayout: (_) async => pdfBytes,
+        name: 'AI_Dental_Rapor_${widget.analysisId}.pdf',
       );
     } catch (e) {
       if (mounted) {
