@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
             width: MediaQuery.of(context).size.width * 0.5,
             child: const Center(
               child: Icon(
-                Icons.coronavirus_outlined,
+                Icons.medical_services_outlined,
                 size: 280,
                 color: Colors.white24,
               ),
