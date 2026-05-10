@@ -475,11 +475,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                               bottomLeft: pw.Radius.circular(6),
                               bottomRight: pw.Radius.circular(6),
                             ),
-                            border: pw.Border(
-                              bottom: pw.BorderSide(color: borderColor),
-                              left: pw.BorderSide(color: borderColor),
-                              right: pw.BorderSide(color: borderColor),
-                            ),
+                            border: pw.Border.all(color: borderColor),
                           ),
                         ),
                       ],
