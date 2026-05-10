@@ -69,7 +69,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               controller: _searchController,
               onChanged: _onSearch,
               decoration: const InputDecoration(
-                hintText: 'Search...',
+                hintText: 'Ara...',
                 prefixIcon: Icon(Icons.search),
                 isDense: true,
               ),
