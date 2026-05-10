@@ -25,7 +25,7 @@ class AppColors {
   static const Color success = Color(0xFF4CAF50);
   static const Color warning = Color(0xFFFF9800);
   static const Color error = Color(0xFFF44336);
-  static const Color done = Color(0xFFFFB300);
+  static const Color done = Color(0xFF4CAF50);
 
   // Bounding box renkleri (analiz sonucu)
   static const Color bboxOrange = Color(0xFFFF6B00);
