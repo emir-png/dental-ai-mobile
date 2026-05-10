@@ -12,59 +12,74 @@ class AppDrawer extends StatelessWidget {
     final isDark = context.watch<ThemeCubit>().state;
     final currentRoute = GoRouterState.of(context).uri.toString();
 
+    final bgColor = isDark ? AppColors.sidebarDark : AppColors.surfaceLight;
+    final headerBg = isDark ? AppColors.sidebarDark : AppColors.primary;
+    final titleColor = isDark ? Colors.white : Colors.white;
+    final textColor = isDark ? Colors.white70 : Colors.black87;
+    final sectionColor = isDark ? Colors.white38 : Colors.black38;
+    final dividerColor = isDark ? Colors.white24 : Colors.black12;
+    final iconColor = isDark ? Colors.white70 : Colors.black54;
+    final userTextColor = isDark ? Colors.white54 : Colors.black45;
+
     return Drawer(
-      backgroundColor: AppColors.sidebarDark,
+      backgroundColor: bgColor,
       child: Column(
         children: [
           // Logo / Başlık
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
-            color: AppColors.sidebarDark,
-            child: const Text(
+            color: headerBg,
+            child: Text(
               'Menü',
               style: TextStyle(
-                color: Colors.white,
+                color: titleColor,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          const Divider(color: Colors.white24, height: 1),
+          Divider(color: dividerColor, height: 1),
           const SizedBox(height: 8),
 
           // İŞLEMLER
-          _sectionHeader('İŞLEMLER'),
+          _sectionHeader('İŞLEMLER', sectionColor),
           _drawerItem(
             context,
             icon: Icons.upload_file,
             title: 'Röntgen Yükle',
             route: '/upload',
             currentRoute: currentRoute,
+            textColor: textColor,
+            iconColor: iconColor,
           ),
 
           const SizedBox(height: 8),
 
           // ANALİZLER
-          _sectionHeader('ANALİZLER'),
+          _sectionHeader('ANALİZLER', sectionColor),
           _drawerItem(
             context,
             icon: Icons.list_alt,
             title: 'Röntgen Sonuçları',
             route: '/history',
             currentRoute: currentRoute,
+            textColor: textColor,
+            iconColor: iconColor,
           ),
 
           const SizedBox(height: 8),
 
           // S.S.S
-          _sectionHeader('S.S.S'),
+          _sectionHeader('S.S.S', sectionColor),
           _drawerItem(
             context,
             icon: Icons.info_outline,
             title: 'Hakkımızda',
             route: '/about',
             currentRoute: currentRoute,
+            textColor: textColor,
+            iconColor: iconColor,
           ),
           _drawerItem(
             context,
@@ -72,10 +87,21 @@ class AppDrawer extends StatelessWidget {
             title: 'İletişim',
             route: '/contact',
             currentRoute: currentRoute,
+            textColor: textColor,
+            iconColor: iconColor,
+          ),
+          _drawerItem(
+            context,
+            icon: Icons.privacy_tip_outlined,
+            title: 'Gizlilik Politikası',
+            route: '/privacy',
+            currentRoute: currentRoute,
+            textColor: textColor,
+            iconColor: iconColor,
           ),
 
           const Spacer(),
-          const Divider(color: Colors.white24, height: 1),
+          Divider(color: dividerColor, height: 1),
 
           // Dark mode toggle
           Padding(
@@ -84,12 +110,12 @@ class AppDrawer extends StatelessWidget {
               children: [
                 Icon(
                   isDark ? Icons.dark_mode : Icons.light_mode,
-                  color: Colors.white70,
+                  color: iconColor,
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Karanlık Mod',
-                  style: TextStyle(color: Colors.white70),
+                  style: TextStyle(color: textColor),
                 ),
                 const Spacer(),
                 Switch(
@@ -105,12 +131,12 @@ class AppDrawer extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: Row(
-              children: const [
-                Icon(Icons.person, color: Colors.white54, size: 16),
-                SizedBox(width: 8),
+              children: [
+                Icon(Icons.person, color: userTextColor, size: 16),
+                const SizedBox(width: 8),
                 Text(
                   'Şu kişi olarak giriş yapıldı: admin',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                  style: TextStyle(color: userTextColor, fontSize: 12),
                 ),
               ],
             ),
@@ -120,13 +146,13 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _sectionHeader(String title) {
+  Widget _sectionHeader(String title, Color color) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
       child: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white38,
+        style: TextStyle(
+          color: color,
           fontSize: 11,
           fontWeight: FontWeight.w600,
           letterSpacing: 1.2,
@@ -136,12 +162,14 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _drawerItem(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String route,
-        required String currentRoute,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String route,
+    required String currentRoute,
+    required Color textColor,
+    required Color iconColor,
+  }) {
     final isActive = currentRoute == route;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -152,13 +180,13 @@ class AppDrawer extends StatelessWidget {
       child: ListTile(
         leading: Icon(
           icon,
-          color: isActive ? AppColors.primary : Colors.white70,
+          color: isActive ? AppColors.primary : iconColor,
           size: 20,
         ),
         title: Text(
           title,
           style: TextStyle(
-            color: isActive ? AppColors.primary : Colors.white70,
+            color: isActive ? AppColors.primary : textColor,
             fontSize: 14,
           ),
         ),
