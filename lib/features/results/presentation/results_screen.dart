@@ -332,24 +332,83 @@ class _ResultsScreenState extends State<ResultsScreen> {
                           child: pw.ClipRRect(
                             horizontalRadius: 8,
                             verticalRadius: 8,
-                            child: xrayImage != null
-                                ? pw.Image(xrayImage,
-                                    fit: pw.BoxFit.cover,
-                                    height: 220)
-                                : pw.Container(
-                                    height: 220,
-                                    color: PdfColors.grey200,
-                                    child: pw.Center(
-                                      child: pw.Text('Görsel yüklenemedi',
-                                          style: const pw.TextStyle(
-                                              color: PdfColors.grey)),
-                                    ),
+                            child: pw.LayoutBuilder(
+                              builder: (context, constraints) {
+                                final imgW = constraints?.maxWidth ?? 280.0;
+                                const imgH = 220.0;
+                                return pw.SizedBox(
+                                  width: imgW,
+                                  height: imgH,
+                                  child: pw.Stack(
+                                    children: [
+                                      xrayImage != null
+                                          ? pw.Image(xrayImage,
+                                              width: imgW,
+                                              height: imgH,
+                                              fit: pw.BoxFit.cover)
+                                          : pw.Container(
+                                              width: imgW,
+                                              height: imgH,
+                                              color: PdfColors.grey200,
+                                              child: pw.Center(
+                                                child: pw.Text(
+                                                  'Görsel yüklenemedi',
+                                                  style: const pw.TextStyle(
+                                                      color: PdfColors.grey),
+                                                ),
+                                              ),
+                                            ),
+                                      ..._predictions.map((p) {
+                                        final x1 = (p['x1'] as num).toDouble() * imgW;
+                                        final y1 = (p['y1'] as num).toDouble() * imgH;
+                                        final x2 = (p['x2'] as num).toDouble() * imgW;
+                                        final y2 = (p['y2'] as num).toDouble() * imgH;
+                                        final bColor = _getPdfColor(p['disease'] as String);
+                                        final disease = p['disease'] as String;
+                                        final conf = ((p['confidence'] as num) * 100)
+                                            .toStringAsFixed(0);
+                                        return pw.Positioned(
+                                          left: x1,
+                                          top: y1,
+                                          child: pw.Container(
+                                            width: x2 - x1,
+                                            height: y2 - y1,
+                                            decoration: pw.BoxDecoration(
+                                              border: pw.Border.all(
+                                                  color: bColor, width: 1.5),
+                                            ),
+                                            child: pw.Align(
+                                              alignment: pw.Alignment.topLeft,
+                                              child: pw.Container(
+                                                color: bColor,
+                                                padding:
+                                                    const pw.EdgeInsets.symmetric(
+                                                        horizontal: 2,
+                                                        vertical: 1),
+                                                child: pw.Text(
+                                                  '$disease %$conf',
+                                                  style: pw.TextStyle(
+                                                    color: PdfColors.white,
+                                                    fontSize: 5,
+                                                    fontWeight:
+                                                        pw.FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    ],
                                   ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                         pw.SizedBox(height: 6),
                         pw.Text(
-                          'Not: Sınırlayıcı kutular orijinal görsel üzerinde gösterilmemektedir.',
+                          'Renkli kutular: AI tarafından tespit edilen bulgular.',
                           style: const pw.TextStyle(
                               color: PdfColors.grey500, fontSize: 8),
                         ),
