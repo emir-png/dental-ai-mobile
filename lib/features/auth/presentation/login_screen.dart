@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/database/database_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() async {
+  Future<void> _login() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -37,10 +38,15 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    final user = await DatabaseHelper.instance.loginUser(
+      username: username,
+      password: password,
+    );
 
-    if (username == 'admin' && password == 'admin') {
-      if (mounted) context.go('/upload');
+    if (!mounted) return;
+
+    if (user != null) {
+      context.go('/upload');
     } else {
       setState(() {
         _isLoading = false;
@@ -125,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       : Icons.visibility,
                                 ),
                                 onPressed: () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
+                                  () => _obscurePassword = !_obscurePassword,
                                 ),
                               ),
                             ),
@@ -161,17 +167,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: _isLoading ? null : _login,
                               child: _isLoading
                                   ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
                                   : const Text(
-                                'Giriş Yap',
-                                style: TextStyle(fontSize: 16),
-                              ),
+                                      'Giriş Yap',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -181,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               const Text('Hesabın yok mu?'),
                               TextButton(
-                                onPressed: () {},
+                                onPressed: () => context.go('/register'),
                                 child: const Text('Yeni bir tane oluştur'),
                               ),
                             ],

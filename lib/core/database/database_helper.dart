@@ -19,12 +19,23 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        createdAt TEXT NOT NULL
+      )
+    ''');
+
     await db.execute('''
       CREATE TABLE xrays (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,6 +57,73 @@ class DatabaseHelper {
         FOREIGN KEY (xrayId) REFERENCES xrays(id)
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NOT NULL UNIQUE,
+          email TEXT NOT NULL UNIQUE,
+          password TEXT NOT NULL,
+          createdAt TEXT NOT NULL
+        )
+      ''');
+    }
+  }
+
+  // USER AUTH
+  Future<bool> registerUser({
+    required String username,
+    required String email,
+    required String password,
+  }) async {
+    final db = await database;
+    try {
+      await db.insert('users', {
+        'username': username,
+        'email': email,
+        'password': password,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> loginUser({
+    required String username,
+    required String password,
+  }) async {
+    final db = await database;
+    final results = await db.query(
+      'users',
+      where: 'username = ? AND password = ?',
+      whereArgs: [username, password],
+    );
+    return results.isNotEmpty ? results.first : null;
+  }
+
+  Future<bool> isUsernameTaken(String username) async {
+    final db = await database;
+    final results = await db.query(
+      'users',
+      where: 'username = ?',
+      whereArgs: [username],
+    );
+    return results.isNotEmpty;
+  }
+
+  Future<bool> isEmailTaken(String email) async {
+    final db = await database;
+    final results = await db.query(
+      'users',
+      where: 'email = ?',
+      whereArgs: [email],
+    );
+    return results.isNotEmpty;
   }
 
   // XRAY CRUD
