@@ -97,150 +97,165 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
             ),
             const SizedBox(height: 16),
 
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Sol kart - Upload formu
-                Expanded(
-                  flex: 2,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: const [
-                              Icon(Icons.upload_file, size: 20),
-                              SizedBox(width: 8),
-                              Text(
-                                'Yeni Diş Röntgeni Analizi',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Dosya seç butonu
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.primary),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                ElevatedButton(
-                                  onPressed: _pickImage,
-                                  child: const Text('Dosya Seç'),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _selectedImage != null
-                                        ? _selectedImage!.path
-                                            .split('/')
-                                            .last
-                                            .split('\\')
-                                            .last
-                                        : 'Dosya seçilmedi...',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Seçilen görsel önizleme
-                          if (_selectedImage != null) ...[
-                            const SizedBox(height: 12),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                _selectedImage!,
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth >= 600;
+                final uploadCard = Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.upload_file,
+                                size: 20, color: AppColors.primary),
+                            SizedBox(width: 8),
+                            Text(
+                              'Yeni Diş Röntgeni Analizi',
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 16),
 
-                          const SizedBox(height: 12),
-
-                          // Notlar
-                          TextField(
-                            controller: _notesController,
-                            maxLines: 3,
-                            decoration: const InputDecoration(
-                              hintText: 'Notlar (opsiyonel)',
-                            ),
+                        // Dosya seç butonu
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.primary),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(height: 16),
-
-                          // Yükle butonu
-                          SizedBox(
-                            height: 44,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _uploadAndAnalyze,
-                              child: _isLoading
-                                  ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                                  : const Text('Yükle'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                // Sağ kart - Bilgi
-                Expanded(
-                  flex: 1,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.info_outline,
-                                  color: AppColors.primary),
-                              SizedBox(width: 8),
-                              Text(
-                                'Bilgi',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ElevatedButton(
+                                onPressed: _pickImage,
+                                child: const Text('Dosya Seç'),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _selectedImage != null
+                                      ? _selectedImage!.path
+                                          .split('/')
+                                          .last
+                                          .split('\\')
+                                          .last
+                                      : 'Dosya seçilmedi...',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 12),
-                          Text(
-                            'Bu panel, diş röntgenlerinden hastalık tespiti için YOLOv11 tabanlı modeli kullanır.',
+                        ),
+
+                        // Seçilen görsel önizleme
+                        if (_selectedImage != null) ...[
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              _selectedImage!,
+                              height: 200,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                          SizedBox(height: 12),
-                          _BilgiItem(
-                              text: 'Röntgen yüklendikten sonra model çalıştırılacaktır.'),
-                          _BilgiItem(
-                              text: 'Sonuçlar Analiz Sonucu sayfasında gösterilecektir.'),
-                          _BilgiItem(
-                              text: 'Bu sonuçlar hasta geçmişine kaydedilebilir.'),
                         ],
-                      ),
+
+                        const SizedBox(height: 12),
+
+                        // Notlar
+                        TextField(
+                          controller: _notesController,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            hintText: 'Notlar (opsiyonel)',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Yükle butonu
+                        SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _uploadAndAnalyze,
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text('Yükle'),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                );
+
+                final infoCard = Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Row(
+                          children: [
+                            Icon(Icons.info_outline,
+                                color: AppColors.primary),
+                            SizedBox(width: 8),
+                            Text(
+                              'Bilgi',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'Bu panel, diş röntgenlerinden hastalık tespiti için YOLOv11 tabanlı modeli kullanır.',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        SizedBox(height: 12),
+                        _BilgiItem(
+                            text:
+                                'Röntgen yüklendikten sonra model çalıştırılacaktır.'),
+                        _BilgiItem(
+                            text:
+                                'Sonuçlar Analiz Sonucu sayfasında gösterilecektir.'),
+                        _BilgiItem(
+                            text:
+                                'Bu sonuçlar hasta geçmişine kaydedilebilir.'),
+                      ],
+                    ),
+                  ),
+                );
+
+                if (isWide) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 2, child: uploadCard),
+                      const SizedBox(width: 16),
+                      Expanded(flex: 1, child: infoCard),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    children: [
+                      uploadCard,
+                      const SizedBox(height: 16),
+                      infoCard,
+                    ],
+                  );
+                }
+              },
             ),
           ],
         ),
