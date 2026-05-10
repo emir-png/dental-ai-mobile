@@ -28,11 +28,6 @@ class MainScaffold extends StatelessWidget {
             icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
             onPressed: () => context.read<ThemeCubit>().toggleTheme(),
           ),
-          // Kullanıcı ikonu
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {},
-          ),
           // Çıkış
           IconButton(
             icon: const Icon(Icons.logout),
