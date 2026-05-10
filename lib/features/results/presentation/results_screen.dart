@@ -131,6 +131,16 @@ class _ResultsScreenState extends State<ResultsScreen> {
           '${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year} '
           '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
+      // Türkçe karakter destekli font yükle
+      final fontRegular = await PdfGoogleFonts.nunitoRegular();
+      final fontBold = await PdfGoogleFonts.nunitoBold();
+      final fontItalic = await PdfGoogleFonts.nunitoItalic();
+      final theme = pw.ThemeData.withFont(
+        base: fontRegular,
+        bold: fontBold,
+        italic: fontItalic,
+      );
+
       // Röntgen görselini yükle
       pw.MemoryImage? xrayImage;
       try {
@@ -164,6 +174,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
       doc.addPage(
         pw.MultiPage(
+          theme: theme,
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(0),
           header: (context) => pw.Container(
