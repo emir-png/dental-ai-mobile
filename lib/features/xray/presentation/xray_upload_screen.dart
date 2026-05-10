@@ -122,37 +122,34 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
                           const SizedBox(height: 16),
 
                           // Dosya seç butonu
-                          InkWell(
-                            onTap: _pickImage,
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: AppColors.primary),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: _pickImage,
-                                    child: const Text('Dosya Seç'),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.primary),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: _pickImage,
+                                  child: const Text('Dosya Seç'),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _selectedImage != null
+                                        ? _selectedImage!.path
+                                            .split('/')
+                                            .last
+                                            .split('\\')
+                                            .last
+                                        : 'Dosya seçilmedi...',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 13),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      _selectedImage != null
-                                          ? _selectedImage!.path
-                                          .split('/')
-                                          .last
-                                          .split('\\')
-                                          .last
-                                          : 'Dosya seçilmedi...',
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
 
