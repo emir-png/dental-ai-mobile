@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/theme_cubit.dart';
+import '../../core/services/session_service.dart';
 import 'app_drawer.dart';
 
 class MainScaffold extends StatelessWidget {
@@ -13,6 +14,11 @@ class MainScaffold extends StatelessWidget {
     required this.title,
     required this.body,
   });
+
+  Future<void> _logout(BuildContext context) async {
+    await SessionService.instance.clearSession();
+    if (context.mounted) context.go('/login');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +36,8 @@ class MainScaffold extends StatelessWidget {
           // Çıkış
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => context.go('/login'),
+            tooltip: 'Çıkış Yap',
+            onPressed: () => _logout(context),
           ),
           const SizedBox(width: 8),
         ],

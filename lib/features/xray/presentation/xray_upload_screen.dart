@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:io';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/database/database_helper.dart';
+import '../../../core/services/session_service.dart';
 import '../../../shared/widgets/main_scaffold.dart';
 
 class XrayUploadScreen extends StatefulWidget {
@@ -50,6 +51,7 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
           '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
       final xrayId = await DatabaseHelper.instance.insertXray({
+        'userId': SessionService.instance.userId,
         'imagePath': _selectedImage!.path,
         'notes': _notesController.text.trim(),
         'uploadDate': dateStr,
@@ -63,9 +65,9 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     }
   }
@@ -108,8 +110,11 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
                       children: [
                         Row(
                           children: const [
-                            Icon(Icons.upload_file,
-                                size: 20, color: AppColors.primary),
+                            Icon(
+                              Icons.upload_file,
+                              size: 20,
+                              color: AppColors.primary,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Yeni Diş Röntgeni Analizi',
@@ -138,10 +143,10 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
                                 child: Text(
                                   _selectedImage != null
                                       ? _selectedImage!.path
-                                          .split('/')
-                                          .last
-                                          .split('\\')
-                                          .last
+                                            .split('/')
+                                            .last
+                                            .split('\\')
+                                            .last
                                       : 'Dosya seçilmedi...',
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontSize: 13),
@@ -208,8 +213,7 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
                       children: const [
                         Row(
                           children: [
-                            Icon(Icons.info_outline,
-                                color: AppColors.primary),
+                            Icon(Icons.info_outline, color: AppColors.primary),
                             SizedBox(width: 8),
                             Text(
                               'Bilgi',
@@ -224,14 +228,16 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
                         ),
                         SizedBox(height: 12),
                         _BilgiItem(
-                            text:
-                                'Röntgen yüklendikten sonra model çalıştırılacaktır.'),
+                          text:
+                              'Röntgen yüklendikten sonra model çalıştırılacaktır.',
+                        ),
                         _BilgiItem(
-                            text:
-                                'Sonuçlar Analiz Sonucu sayfasında gösterilecektir.'),
+                          text:
+                              'Sonuçlar Analiz Sonucu sayfasında gösterilecektir.',
+                        ),
                         _BilgiItem(
-                            text:
-                                'Bu sonuçlar hasta geçmişine kaydedilebilir.'),
+                          text: 'Bu sonuçlar hasta geçmişine kaydedilebilir.',
+                        ),
                       ],
                     ),
                   ),

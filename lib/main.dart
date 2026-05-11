@@ -4,10 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
 import 'core/router/app_router.dart';
+import 'core/services/session_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SharedPreferences.getInstance();
+  await SessionService.instance.loadSession();
   runApp(const DentalAIApp());
 }
 

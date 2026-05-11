@@ -17,12 +17,14 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'dental_ai.db');
 
-    return await openDatabase(
+    final db = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+    await _seedAdmin(db);
+    return db;
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -32,6 +34,7 @@ class DatabaseHelper {
         username TEXT NOT NULL UNIQUE,
         email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user',
         createdAt TEXT NOT NULL
       )
     ''');
@@ -39,11 +42,13 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE xrays (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId INTEGER,
         imagePath TEXT NOT NULL,
         resultImagePath TEXT,
         notes TEXT,
         uploadDate TEXT NOT NULL,
-        status TEXT DEFAULT 'done'
+        status TEXT DEFAULT 'done',
+        FOREIGN KEY (userId) REFERENCES users(id)
       )
     ''');
 
@@ -67,9 +72,50 @@ class DatabaseHelper {
           username TEXT NOT NULL UNIQUE,
           email TEXT NOT NULL UNIQUE,
           password TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'user',
           createdAt TEXT NOT NULL
         )
       ''');
+    }
+    if (oldVersion < 3) {
+      // Add role column to existing users
+      try {
+        await db.execute(
+            "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'");
+      } catch (_) {}
+      // Add userId column to existing xrays
+      try {
+        await db.execute(
+            'ALTER TABLE xrays ADD COLUMN userId INTEGER');
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _seedAdmin(Database db) async {
+    final results = await db.query(
+      'users',
+      where: 'username = ?',
+      whereArgs: ['admin'],
+    );
+    if (results.isEmpty) {
+      await db.insert('users', {
+        'username': 'admin',
+        'email': 'admin@dentalai.com',
+        'password': 'admin123',
+        'role': 'admin',
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+    } else {
+      // Ensure existing admin has correct role
+      final existing = results.first;
+      if (existing['role'] != 'admin') {
+        await db.update(
+          'users',
+          {'role': 'admin'},
+          where: 'username = ?',
+          whereArgs: ['admin'],
+        );
+      }
     }
   }
 
@@ -85,6 +131,7 @@ class DatabaseHelper {
         'username': username,
         'email': email,
         'password': password,
+        'role': 'user',
         'createdAt': DateTime.now().toIso8601String(),
       });
       return true;
@@ -126,15 +173,62 @@ class DatabaseHelper {
     return results.isNotEmpty;
   }
 
+  // USER MANAGEMENT (Admin)
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    final db = await database;
+    return await db.query('users', orderBy: 'id ASC');
+  }
+
+  Future<bool> updateUserRole(int userId, String role) async {
+    final db = await database;
+    try {
+      await db.update(
+        'users',
+        {'role': role},
+        where: 'id = ?',
+        whereArgs: [userId],
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<int> getUserXrayCount(int userId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM xrays WHERE userId = ?',
+      [userId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
   // XRAY CRUD
   Future<int> insertXray(Map<String, dynamic> xray) async {
     final db = await database;
     return await db.insert('xrays', xray);
   }
 
+  /// Returns all xrays joined with username — for admin use
   Future<List<Map<String, dynamic>>> getAllXrays() async {
     final db = await database;
-    return await db.query('xrays', orderBy: 'id DESC');
+    return await db.rawQuery('''
+      SELECT x.*, u.username as ownerUsername
+      FROM xrays x
+      LEFT JOIN users u ON x.userId = u.id
+      ORDER BY x.id DESC
+    ''');
+  }
+
+  /// Returns xrays belonging to a specific user
+  Future<List<Map<String, dynamic>>> getXraysByUserId(int userId) async {
+    final db = await database;
+    return await db.query(
+      'xrays',
+      where: 'userId = ?',
+      whereArgs: [userId],
+      orderBy: 'id DESC',
+    );
   }
 
   Future<Map<String, dynamic>?> getXrayById(int id) async {

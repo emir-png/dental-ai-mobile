@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/database/database_helper.dart';
+import '../../../core/services/session_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,7 +47,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (user != null) {
-      context.go('/upload');
+      await SessionService.instance.saveSession(user);
+      if (!mounted) return;
+      if (SessionService.instance.isAdmin) {
+        context.go('/admin');
+      } else {
+        context.go('/upload');
+      }
     } else {
       setState(() {
         _isLoading = false;

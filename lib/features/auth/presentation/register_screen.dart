@@ -43,6 +43,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
+    // Prevent registering as 'admin'
+    if (username.toLowerCase() == 'admin') {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '"admin" kullanıcı adı kullanılamaz.';
+      });
+      return;
+    }
+
     final usernameTaken = await DatabaseHelper.instance.isUsernameTaken(username);
     if (usernameTaken) {
       setState(() {
