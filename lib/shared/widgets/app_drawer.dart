@@ -121,7 +121,7 @@ class AppDrawer extends StatelessWidget {
                 Switch(
                   value: isDark,
                   onChanged: (_) => context.read<ThemeCubit>().toggleTheme(),
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                 ),
               ],
             ),
