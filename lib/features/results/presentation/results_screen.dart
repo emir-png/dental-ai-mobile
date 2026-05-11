@@ -178,6 +178,59 @@ class _ResultsScreenState extends State<ResultsScreen> {
     }
   }
 
+  /// FDI (ISO 3950) diş numaralandırma – panoramik röntgen koordinatlarına göre.
+  /// [xCenter] ve [yCenter] 0–1 normalize edilmiş değerler.
+  /// Quadrant 1: üst sağ (11-18) | Quadrant 2: üst sol (21-28)
+  /// Quadrant 4: alt sağ (41-48) | Quadrant 3: alt sol (31-38)
+  String _estimateToothNumber(double xCenter, double yCenter) {
+    final isUpper = yCenter < 0.50;
+    if (isUpper) {
+      if (xCenter < 0.50) {
+        // Q1 – hasta üst sağ: 11..18 (görüntüde sol→sağ = hasta 18→11)
+        if (xCenter < 0.07) return '18';
+        if (xCenter < 0.14) return '17';
+        if (xCenter < 0.21) return '16';
+        if (xCenter < 0.28) return '15';
+        if (xCenter < 0.35) return '14';
+        if (xCenter < 0.41) return '13';
+        if (xCenter < 0.46) return '12';
+        return '11';
+      } else {
+        // Q2 – hasta üst sol: 21..28
+        if (xCenter < 0.54) return '21';
+        if (xCenter < 0.59) return '22';
+        if (xCenter < 0.65) return '23';
+        if (xCenter < 0.72) return '24';
+        if (xCenter < 0.79) return '25';
+        if (xCenter < 0.86) return '26';
+        if (xCenter < 0.93) return '27';
+        return '28';
+      }
+    } else {
+      if (xCenter < 0.50) {
+        // Q4 – hasta alt sağ: 41..48 (görüntüde sol→sağ = hasta 48→41)
+        if (xCenter < 0.07) return '48';
+        if (xCenter < 0.14) return '47';
+        if (xCenter < 0.21) return '46';
+        if (xCenter < 0.28) return '45';
+        if (xCenter < 0.35) return '44';
+        if (xCenter < 0.41) return '43';
+        if (xCenter < 0.46) return '42';
+        return '41';
+      } else {
+        // Q3 – hasta alt sol: 31..38
+        if (xCenter < 0.54) return '31';
+        if (xCenter < 0.59) return '32';
+        if (xCenter < 0.65) return '33';
+        if (xCenter < 0.72) return '34';
+        if (xCenter < 0.79) return '35';
+        if (xCenter < 0.86) return '36';
+        if (xCenter < 0.93) return '37';
+        return '38';
+      }
+    }
+  }
+
   Future<void> _generatePdf() async {
     if (_xray == null || _predictions.isEmpty) return;
     setState(() => _isGeneratingPdf = true);
@@ -546,6 +599,17 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                 ),
                               ),
                               pw.Expanded(
+                                flex: 2,
+                                child: pw.Text(
+                                  'Diş No',
+                                  style: pw.TextStyle(
+                                    color: PdfColors.white,
+                                    fontWeight: pw.FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                              pw.Expanded(
                                 flex: 5,
                                 child: pw.Text(
                                   'Tanı',
@@ -578,6 +642,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
                               .toStringAsFixed(1);
                           final disease = p['disease'] as String;
                           final dColor = _getPdfColor(disease);
+                          final xC =
+                              ((p['x1'] as num) + (p['x2'] as num)) / 2;
+                          final yC =
+                              ((p['y1'] as num) + (p['y2'] as num)) / 2;
+                          final toothNo = _estimateToothNumber(
+                              xC.toDouble(), yC.toDouble());
                           return pw.Container(
                             padding: const pw.EdgeInsets.symmetric(
                               horizontal: 10,
@@ -605,6 +675,28 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                     style: const pw.TextStyle(
                                       fontSize: 9,
                                       color: PdfColors.grey700,
+                                    ),
+                                  ),
+                                ),
+                                pw.Expanded(
+                                  flex: 2,
+                                  child: pw.Container(
+                                    padding: const pw.EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 1,
+                                    ),
+                                    decoration: pw.BoxDecoration(
+                                      color: dColor,
+                                      borderRadius:
+                                          pw.BorderRadius.circular(3),
+                                    ),
+                                    child: pw.Text(
+                                      toothNo,
+                                      style: pw.TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: pw.FontWeight.bold,
+                                        color: PdfColors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1004,6 +1096,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                   final y2 =
                                       (p['y2'] as num).toDouble() * imgHeight;
                                   final color = _getBboxColor(p['disease']);
+                                  final xC = ((p['x1'] as num) + (p['x2'] as num)) / 2;
+                                  final yC = ((p['y1'] as num) + (p['y2'] as num)) / 2;
+                                  final toothNo = _estimateToothNumber(xC.toDouble(), yC.toDouble());
                                   return Positioned(
                                     left: x1,
                                     top: y1,
@@ -1025,10 +1120,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                             vertical: 1,
                                           ),
                                           child: Text(
-                                            '${p['disease']} %${((p['confidence'] as num) * 100).toStringAsFixed(0)}',
+                                            'T$toothNo',
                                             style: const TextStyle(
                                               color: Colors.white,
-                                              fontSize: 7,
+                                              fontSize: 8,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -1097,9 +1192,20 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       child: Row(
                         children: const [
                           SizedBox(
-                            width: 28,
+                            width: 24,
                             child: Text(
                               '#',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 52,
+                            child: Text(
+                              'Diş No',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -1118,7 +1224,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             ),
                           ),
                           SizedBox(
-                            width: 72,
+                            width: 68,
                             child: Text(
                               'Güven (%)',
                               textAlign: TextAlign.right,
@@ -1136,9 +1242,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     // Tablo satırları
                     Container(
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.grey.withOpacity(0.2),
-                        ),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(8),
                           bottomRight: Radius.circular(8),
@@ -1150,6 +1254,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
                           final p = entry.value;
                           final conf = ((p['confidence'] as num) * 100)
                               .toStringAsFixed(0);
+                          final xC = ((p['x1'] as num) + (p['x2'] as num)) / 2;
+                          final yC = ((p['y1'] as num) + (p['y2'] as num)) / 2;
+                          final toothNo = _estimateToothNumber(
+                              xC.toDouble(), yC.toDouble());
                           final isLast = i == _predictions.length - 1;
                           return Container(
                             decoration: BoxDecoration(
@@ -1171,12 +1279,34 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             child: Row(
                               children: [
                                 SizedBox(
-                                  width: 28,
+                                  width: 24,
                                   child: Text(
                                     '${i + 1}',
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 52,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _getBboxColor(p['disease'])
+                                          .withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      toothNo,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: _getBboxColor(p['disease']),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1202,15 +1332,16 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                   ),
                                 ),
                                 SizedBox(
-                                  width: 72,
+                                  width: 68,
                                   child: Text(
                                     '%$conf',
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                   ),
                                 ),
