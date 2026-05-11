@@ -6,6 +6,7 @@ import 'package:printing/printing.dart';
 import 'dart:io';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/database/database_helper.dart';
+import '../../../core/services/ai_service.dart';
 import '../../../shared/widgets/main_scaffold.dart';
 
 class ResultsScreen extends StatefulWidget {
@@ -52,100 +53,60 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Future<void> _runAnalysis(int id, String imagePath) async {
     setState(() => _isAnalyzing = true);
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Gerçek YOLOv11 model çağrısı
+      final apiPredictions = await AiService.analyzeXray(imagePath);
 
-    final mockPredictions = [
-      {
-        'disease': 'Crown - bridge',
-        'confidence': 0.96,
-        'x1': 0.3,
-        'y1': 0.4,
-        'x2': 0.45,
-        'y2': 0.6,
-      },
-      {
-        'disease': 'Crown - bridge',
-        'confidence': 0.96,
-        'x1': 0.5,
-        'y1': 0.35,
-        'x2': 0.65,
-        'y2': 0.55,
-      },
-      {
-        'disease': 'Filling',
-        'confidence': 0.95,
-        'x1': 0.2,
-        'y1': 0.5,
-        'x2': 0.35,
-        'y2': 0.65,
-      },
-      {
-        'disease': 'Crown - bridge',
-        'confidence': 0.95,
-        'x1': 0.6,
-        'y1': 0.4,
-        'x2': 0.75,
-        'y2': 0.6,
-      },
-      {
-        'disease': 'Caries',
-        'confidence': 0.93,
-        'x1': 0.4,
-        'y1': 0.55,
-        'x2': 0.55,
-        'y2': 0.7,
-      },
-      {
-        'disease': 'Filling',
-        'confidence': 0.92,
-        'x1': 0.25,
-        'y1': 0.45,
-        'x2': 0.38,
-        'y2': 0.58,
-      },
-      {
-        'disease': 'Root Canal Obturation',
-        'confidence': 0.91,
-        'x1': 0.55,
-        'y1': 0.3,
-        'x2': 0.7,
-        'y2': 0.5,
-      },
-      {
-        'disease': 'Implant',
-        'confidence': 0.89,
-        'x1': 0.7,
-        'y1': 0.4,
-        'x2': 0.82,
-        'y2': 0.6,
-      },
-    ];
+      if (apiPredictions.isEmpty) {
+        // Model hiçbir şey tespit etmedi
+        await DatabaseHelper.instance.updateXray(id, {'status': 'done'});
+      } else {
+        for (final p in apiPredictions) {
+          await DatabaseHelper.instance.insertPrediction({
+            'xrayId': id,
+            'disease': p['disease'],
+            'confidence': (p['confidence'] as num).toDouble(),
+            'x1': (p['x1'] as num).toDouble(),
+            'y1': (p['y1'] as num).toDouble(),
+            'x2': (p['x2'] as num).toDouble(),
+            'y2': (p['y2'] as num).toDouble(),
+          });
+        }
+        await DatabaseHelper.instance.updateXray(id, {'status': 'done'});
+      }
 
-    for (final p in mockPredictions) {
-      await DatabaseHelper.instance.insertPrediction({
-        'xrayId': id,
-        'disease': p['disease'],
-        'confidence': p['confidence'],
-        'x1': p['x1'],
-        'y1': p['y1'],
-        'x2': p['x2'],
-        'y2': p['y2'],
-      });
+      final xray = await DatabaseHelper.instance.getXrayById(id);
+      final predictions =
+          await DatabaseHelper.instance.getPredictionsByXrayId(id);
+
+      if (mounted) {
+        setState(() {
+          _xray = xray;
+          _predictions = predictions;
+          _isLoading = false;
+          _isAnalyzing = false;
+        });
+      }
+    } catch (e) {
+      await DatabaseHelper.instance.updateXray(id, {'status': 'error'});
+      final xray = await DatabaseHelper.instance.getXrayById(id);
+
+      if (mounted) {
+        setState(() {
+          _xray = xray;
+          _predictions = [];
+          _isLoading = false;
+          _isAnalyzing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Analiz hatası: $e'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 8),
+          ),
+        );
+      }
     }
-
-    await DatabaseHelper.instance.updateXray(id, {'status': 'done'});
-
-    final xray = await DatabaseHelper.instance.getXrayById(id);
-    final predictions = await DatabaseHelper.instance.getPredictionsByXrayId(
-      id,
-    );
-
-    setState(() {
-      _xray = xray;
-      _predictions = predictions;
-      _isLoading = false;
-      _isAnalyzing = false;
-    });
   }
 
   Color _getBboxColor(String disease) {
@@ -158,6 +119,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
         return AppColors.bboxRed;
       case 'Root Canal Obturation':
         return AppColors.bboxPurple;
+      case 'Implant':
+        return AppColors.bboxWhite;
+      case 'Post-screw':
+        return const Color(0xFF00BCD4); // cyan
       default:
         return AppColors.bboxWhite;
     }
@@ -173,6 +138,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
         return const PdfColor.fromInt(0xFFF44336);
       case 'Root Canal Obturation':
         return const PdfColor.fromInt(0xFF9C27B0);
+      case 'Implant':
+        return PdfColors.grey600;
+      case 'Post-screw':
+        return const PdfColor.fromInt(0xFF00BCD4);
       default:
         return PdfColors.grey;
     }
@@ -844,7 +813,14 @@ class _ResultsScreenState extends State<ResultsScreen> {
                               'Root Canal Obturation',
                               const PdfColor.fromInt(0xFF9C27B0),
                             ),
-                            _legendItem('Diğer', PdfColors.grey500),
+                            _legendItem(
+                              'Implant',
+                              PdfColors.grey600,
+                            ),
+                            _legendItem(
+                              'Post-screw',
+                              const PdfColor.fromInt(0xFF00BCD4),
+                            ),
                           ],
                         ),
                       ],
@@ -1240,6 +1216,40 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     ),
 
                     // Tablo satırları
+                    if (_predictions.isEmpty)
+                      Container(
+                        decoration: BoxDecoration(
+                          border:
+                              Border.all(color: Colors.grey.withOpacity(0.2)),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(8),
+                            bottomRight: Radius.circular(8),
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: const Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.search_off_outlined,
+                                  size: 40, color: Colors.grey),
+                              SizedBox(height: 8),
+                              Text(
+                                'Model hiçbir bulgu tespit etmedi.',
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.grey),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Lütfen geçerli bir diş röntgeni görüntüsü yükleyin.',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
                     Container(
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.withOpacity(0.2)),

@@ -1,3 +1,9 @@
+# Backend model weights (large binary files - auto-downloaded at runtime)
+backend/weights/
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+
 # Miscellaneous
 *.class
 *.log
