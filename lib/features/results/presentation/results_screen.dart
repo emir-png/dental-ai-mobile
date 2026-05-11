@@ -34,8 +34,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
     if (id == null) return;
 
     final xray = await DatabaseHelper.instance.getXrayById(id);
-    final predictions =
-        await DatabaseHelper.instance.getPredictionsByXrayId(id);
+    final predictions = await DatabaseHelper.instance.getPredictionsByXrayId(
+      id,
+    );
 
     if (xray != null && predictions.isEmpty) {
       await _runAnalysis(id, xray['imagePath']);
@@ -54,14 +55,70 @@ class _ResultsScreenState extends State<ResultsScreen> {
     await Future.delayed(const Duration(seconds: 2));
 
     final mockPredictions = [
-      {'disease': 'Crown - bridge', 'confidence': 0.96, 'x1': 0.3, 'y1': 0.4, 'x2': 0.45, 'y2': 0.6},
-      {'disease': 'Crown - bridge', 'confidence': 0.96, 'x1': 0.5, 'y1': 0.35, 'x2': 0.65, 'y2': 0.55},
-      {'disease': 'Filling', 'confidence': 0.95, 'x1': 0.2, 'y1': 0.5, 'x2': 0.35, 'y2': 0.65},
-      {'disease': 'Crown - bridge', 'confidence': 0.95, 'x1': 0.6, 'y1': 0.4, 'x2': 0.75, 'y2': 0.6},
-      {'disease': 'Caries', 'confidence': 0.93, 'x1': 0.4, 'y1': 0.55, 'x2': 0.55, 'y2': 0.7},
-      {'disease': 'Filling', 'confidence': 0.92, 'x1': 0.25, 'y1': 0.45, 'x2': 0.38, 'y2': 0.58},
-      {'disease': 'Root Canal Obturation', 'confidence': 0.91, 'x1': 0.55, 'y1': 0.3, 'x2': 0.7, 'y2': 0.5},
-      {'disease': 'Implant', 'confidence': 0.89, 'x1': 0.7, 'y1': 0.4, 'x2': 0.82, 'y2': 0.6},
+      {
+        'disease': 'Crown - bridge',
+        'confidence': 0.96,
+        'x1': 0.3,
+        'y1': 0.4,
+        'x2': 0.45,
+        'y2': 0.6,
+      },
+      {
+        'disease': 'Crown - bridge',
+        'confidence': 0.96,
+        'x1': 0.5,
+        'y1': 0.35,
+        'x2': 0.65,
+        'y2': 0.55,
+      },
+      {
+        'disease': 'Filling',
+        'confidence': 0.95,
+        'x1': 0.2,
+        'y1': 0.5,
+        'x2': 0.35,
+        'y2': 0.65,
+      },
+      {
+        'disease': 'Crown - bridge',
+        'confidence': 0.95,
+        'x1': 0.6,
+        'y1': 0.4,
+        'x2': 0.75,
+        'y2': 0.6,
+      },
+      {
+        'disease': 'Caries',
+        'confidence': 0.93,
+        'x1': 0.4,
+        'y1': 0.55,
+        'x2': 0.55,
+        'y2': 0.7,
+      },
+      {
+        'disease': 'Filling',
+        'confidence': 0.92,
+        'x1': 0.25,
+        'y1': 0.45,
+        'x2': 0.38,
+        'y2': 0.58,
+      },
+      {
+        'disease': 'Root Canal Obturation',
+        'confidence': 0.91,
+        'x1': 0.55,
+        'y1': 0.3,
+        'x2': 0.7,
+        'y2': 0.5,
+      },
+      {
+        'disease': 'Implant',
+        'confidence': 0.89,
+        'x1': 0.7,
+        'y1': 0.4,
+        'x2': 0.82,
+        'y2': 0.6,
+      },
     ];
 
     for (final p in mockPredictions) {
@@ -79,8 +136,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
     await DatabaseHelper.instance.updateXray(id, {'status': 'done'});
 
     final xray = await DatabaseHelper.instance.getXrayById(id);
-    final predictions =
-        await DatabaseHelper.instance.getPredictionsByXrayId(id);
+    final predictions = await DatabaseHelper.instance.getPredictionsByXrayId(
+      id,
+    );
 
     setState(() {
       _xray = xray;
@@ -158,19 +216,20 @@ class _ResultsScreenState extends State<ResultsScreen> {
       const borderColor = PdfColor.fromInt(0xFFE0E6F0);
 
       // Özet istatistikler
-      final uniqueDiseases =
-          _predictions.map((p) => p['disease'] as String).toSet();
+      final uniqueDiseases = _predictions
+          .map((p) => p['disease'] as String)
+          .toSet();
       final avgConf = _predictions.isEmpty
           ? 0.0
           : _predictions
-                  .map((p) => (p['confidence'] as num).toDouble())
-                  .reduce((a, b) => a + b) /
-              _predictions.length;
+                    .map((p) => (p['confidence'] as num).toDouble())
+                    .reduce((a, b) => a + b) /
+                _predictions.length;
       final maxConf = _predictions.isEmpty
           ? 0.0
           : _predictions
-              .map((p) => (p['confidence'] as num).toDouble())
-              .reduce((a, b) => a > b ? a : b);
+                .map((p) => (p['confidence'] as num).toDouble())
+                .reduce((a, b) => a > b ? a : b);
 
       doc.addPage(
         pw.MultiPage(
@@ -179,7 +238,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
           margin: const pw.EdgeInsets.all(0),
           header: (context) => pw.Container(
             color: primaryColor,
-            padding: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+            padding: const pw.EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: 20,
+            ),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -229,7 +291,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
           ),
           footer: (context) => pw.Container(
             color: const PdfColor.fromInt(0xFFF0F4FF),
-            padding: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 10),
+            padding: const pw.EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: 10,
+            ),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -265,9 +330,17 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 ),
                 child: pw.Row(
                   children: [
-                    _infoCell('Röntgen ID', '#${_xray!['id'] ?? widget.analysisId}', primaryColor),
+                    _infoCell(
+                      'Röntgen ID',
+                      '#${_xray!['id'] ?? widget.analysisId}',
+                      primaryColor,
+                    ),
                     pw.SizedBox(width: 24),
-                    _infoCell('Yükleme Tarihi', _xray!['uploadDate'] ?? '-', primaryColor),
+                    _infoCell(
+                      'Yükleme Tarihi',
+                      _xray!['uploadDate'] ?? '-',
+                      primaryColor,
+                    ),
                     pw.SizedBox(width: 24),
                     _infoCell('Oluşturulma', generatedAt, primaryColor),
                     pw.SizedBox(width: 24),
@@ -294,14 +367,19 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('Notlar',
-                          style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 10,
-                              color: primaryColor)),
+                      pw.Text(
+                        'Notlar',
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 10,
+                          color: primaryColor,
+                        ),
+                      ),
                       pw.SizedBox(height: 4),
-                      pw.Text(_xray!['notes'].toString(),
-                          style: const pw.TextStyle(fontSize: 10)),
+                      pw.Text(
+                        _xray!['notes'].toString(),
+                        style: const pw.TextStyle(fontSize: 10),
+                      ),
                     ],
                   ),
                 ),
@@ -342,10 +420,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                   child: pw.Stack(
                                     children: [
                                       xrayImage != null
-                                          ? pw.Image(xrayImage,
+                                          ? pw.Image(
+                                              xrayImage,
                                               width: imgW,
                                               height: imgH,
-                                              fit: pw.BoxFit.cover)
+                                              fit: pw.BoxFit.cover,
+                                            )
                                           : pw.Container(
                                               width: imgW,
                                               height: imgH,
@@ -354,19 +434,27 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                                 child: pw.Text(
                                                   'Görsel yüklenemedi',
                                                   style: const pw.TextStyle(
-                                                      color: PdfColors.grey),
+                                                    color: PdfColors.grey,
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                       ..._predictions.map((p) {
-                                        final x1 = (p['x1'] as num).toDouble() * imgW;
-                                        final y1 = (p['y1'] as num).toDouble() * imgH;
-                                        final x2 = (p['x2'] as num).toDouble() * imgW;
-                                        final y2 = (p['y2'] as num).toDouble() * imgH;
-                                        final bColor = _getPdfColor(p['disease'] as String);
+                                        final x1 =
+                                            (p['x1'] as num).toDouble() * imgW;
+                                        final y1 =
+                                            (p['y1'] as num).toDouble() * imgH;
+                                        final x2 =
+                                            (p['x2'] as num).toDouble() * imgW;
+                                        final y2 =
+                                            (p['y2'] as num).toDouble() * imgH;
+                                        final bColor = _getPdfColor(
+                                          p['disease'] as String,
+                                        );
                                         final disease = p['disease'] as String;
-                                        final conf = ((p['confidence'] as num) * 100)
-                                            .toStringAsFixed(0);
+                                        final conf =
+                                            ((p['confidence'] as num) * 100)
+                                                .toStringAsFixed(0);
                                         return pw.Positioned(
                                           left: x1,
                                           top: y1,
@@ -375,7 +463,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                             height: y2 - y1,
                                             decoration: pw.BoxDecoration(
                                               border: pw.Border.all(
-                                                  color: bColor, width: 1.5),
+                                                color: bColor,
+                                                width: 1.5,
+                                              ),
                                             ),
                                             child: pw.Align(
                                               alignment: pw.Alignment.topLeft,
@@ -383,8 +473,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                                 color: bColor,
                                                 padding:
                                                     const pw.EdgeInsets.symmetric(
-                                                        horizontal: 2,
-                                                        vertical: 1),
+                                                      horizontal: 2,
+                                                      vertical: 1,
+                                                    ),
                                                 child: pw.Text(
                                                   '$disease %$conf',
                                                   style: pw.TextStyle(
@@ -410,7 +501,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         pw.Text(
                           'Renkli kutular: AI tarafından tespit edilen bulgular.',
                           style: const pw.TextStyle(
-                              color: PdfColors.grey500, fontSize: 8),
+                            color: PdfColors.grey500,
+                            fontSize: 8,
+                          ),
                         ),
                       ],
                     ),
@@ -429,7 +522,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         // Tablo başlığı
                         pw.Container(
                           padding: const pw.EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 7),
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
                           decoration: pw.BoxDecoration(
                             color: primaryColor,
                             borderRadius: const pw.BorderRadius.only(
@@ -440,26 +535,38 @@ class _ResultsScreenState extends State<ResultsScreen> {
                           child: pw.Row(
                             children: [
                               pw.Expanded(
-                                  flex: 1,
-                                  child: pw.Text('#',
-                                      style: pw.TextStyle(
-                                          color: PdfColors.white,
-                                          fontWeight: pw.FontWeight.bold,
-                                          fontSize: 10))),
+                                flex: 1,
+                                child: pw.Text(
+                                  '#',
+                                  style: pw.TextStyle(
+                                    color: PdfColors.white,
+                                    fontWeight: pw.FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
                               pw.Expanded(
-                                  flex: 5,
-                                  child: pw.Text('Tanı',
-                                      style: pw.TextStyle(
-                                          color: PdfColors.white,
-                                          fontWeight: pw.FontWeight.bold,
-                                          fontSize: 10))),
+                                flex: 5,
+                                child: pw.Text(
+                                  'Tanı',
+                                  style: pw.TextStyle(
+                                    color: PdfColors.white,
+                                    fontWeight: pw.FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
                               pw.Expanded(
-                                  flex: 2,
-                                  child: pw.Text('Güven',
-                                      style: pw.TextStyle(
-                                          color: PdfColors.white,
-                                          fontWeight: pw.FontWeight.bold,
-                                          fontSize: 10))),
+                                flex: 2,
+                                child: pw.Text(
+                                  'Güven',
+                                  style: pw.TextStyle(
+                                    color: PdfColors.white,
+                                    fontWeight: pw.FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -473,14 +580,18 @@ class _ResultsScreenState extends State<ResultsScreen> {
                           final dColor = _getPdfColor(disease);
                           return pw.Container(
                             padding: const pw.EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: pw.BoxDecoration(
                               color: i % 2 == 0
                                   ? PdfColors.white
                                   : const PdfColor.fromInt(0xFFF8FAFF),
                               border: pw.Border(
                                 bottom: pw.BorderSide(
-                                    color: borderColor, width: 0.5),
+                                  color: borderColor,
+                                  width: 0.5,
+                                ),
                                 left: pw.BorderSide(color: borderColor),
                                 right: pw.BorderSide(color: borderColor),
                               ),
@@ -488,11 +599,15 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             child: pw.Row(
                               children: [
                                 pw.Expanded(
-                                    flex: 1,
-                                    child: pw.Text('${i + 1}',
-                                        style: const pw.TextStyle(
-                                            fontSize: 9,
-                                            color: PdfColors.grey700))),
+                                  flex: 1,
+                                  child: pw.Text(
+                                    '${i + 1}',
+                                    style: const pw.TextStyle(
+                                      fontSize: 9,
+                                      color: PdfColors.grey700,
+                                    ),
+                                  ),
+                                ),
                                 pw.Expanded(
                                   flex: 5,
                                   child: pw.Row(
@@ -507,20 +622,27 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                       ),
                                       pw.SizedBox(width: 5),
                                       pw.Expanded(
-                                        child: pw.Text(disease,
-                                            style: const pw.TextStyle(
-                                                fontSize: 9)),
+                                        child: pw.Text(
+                                          disease,
+                                          style: const pw.TextStyle(
+                                            fontSize: 9,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
                                 pw.Expanded(
-                                    flex: 2,
-                                    child: pw.Text('%$conf',
-                                        style: pw.TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: pw.FontWeight.bold,
-                                            color: successColor))),
+                                  flex: 2,
+                                  child: pw.Text(
+                                    '%$conf',
+                                    style: pw.TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: successColor,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           );
@@ -556,19 +678,37 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   pw.SizedBox(height: 10),
                   pw.Row(
                     children: [
-                      _statCard('Toplam Bulgu', '${_predictions.length}',
-                          primaryColor, bgLight, borderColor),
+                      _statCard(
+                        'Toplam Bulgu',
+                        '${_predictions.length}',
+                        primaryColor,
+                        bgLight,
+                        borderColor,
+                      ),
                       pw.SizedBox(width: 12),
-                      _statCard('Farklı Tanı Türü',
-                          '${uniqueDiseases.length}', primaryDark, bgLight, borderColor),
+                      _statCard(
+                        'Farklı Tanı Türü',
+                        '${uniqueDiseases.length}',
+                        primaryDark,
+                        bgLight,
+                        borderColor,
+                      ),
                       pw.SizedBox(width: 12),
-                      _statCard('Ort. Güven',
-                          '%${(avgConf * 100).toStringAsFixed(1)}',
-                          successColor, bgLight, borderColor),
+                      _statCard(
+                        'Ort. Güven',
+                        '%${(avgConf * 100).toStringAsFixed(1)}',
+                        successColor,
+                        bgLight,
+                        borderColor,
+                      ),
                       pw.SizedBox(width: 12),
-                      _statCard('Maks. Güven',
-                          '%${(maxConf * 100).toStringAsFixed(1)}',
-                          successColor, bgLight, borderColor),
+                      _statCard(
+                        'Maks. Güven',
+                        '%${(maxConf * 100).toStringAsFixed(1)}',
+                        successColor,
+                        bgLight,
+                        borderColor,
+                      ),
                     ],
                   ),
                   pw.SizedBox(height: 12),
@@ -583,24 +723,35 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('Renk Lejantı',
-                            style: pw.TextStyle(
-                                fontWeight: pw.FontWeight.bold,
-                                fontSize: 10,
-                                color: primaryColor)),
+                        pw.Text(
+                          'Renk Lejantı',
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 10,
+                            color: primaryColor,
+                          ),
+                        ),
                         pw.SizedBox(height: 8),
                         pw.Wrap(
                           spacing: 16,
                           runSpacing: 6,
                           children: [
-                            _legendItem('Crown - bridge',
-                                const PdfColor.fromInt(0xFFFF6B00)),
                             _legendItem(
-                                'Filling', const PdfColor.fromInt(0xFF2196F3)),
+                              'Crown - bridge',
+                              const PdfColor.fromInt(0xFFFF6B00),
+                            ),
                             _legendItem(
-                                'Caries', const PdfColor.fromInt(0xFFF44336)),
-                            _legendItem('Root Canal Obturation',
-                                const PdfColor.fromInt(0xFF9C27B0)),
+                              'Filling',
+                              const PdfColor.fromInt(0xFF2196F3),
+                            ),
+                            _legendItem(
+                              'Caries',
+                              const PdfColor.fromInt(0xFFF44336),
+                            ),
+                            _legendItem(
+                              'Root Canal Obturation',
+                              const PdfColor.fromInt(0xFF9C27B0),
+                            ),
                             _legendItem('Diğer', PdfColors.grey500),
                           ],
                         ),
@@ -641,76 +792,96 @@ class _ResultsScreenState extends State<ResultsScreen> {
   // ── PDF yardımcı widget'ları ─────────────────────────────────────────────
 
   pw.Widget _sectionTitle(String title, PdfColor color) => pw.Row(
-        children: [
-          pw.Container(width: 4, height: 16,
-              decoration: pw.BoxDecoration(
-                  color: color,
-                  borderRadius: pw.BorderRadius.circular(2))),
-          pw.SizedBox(width: 8),
-          pw.Text(title,
-              style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 13,
-                  color: color)),
-        ],
-      );
-
-  pw.Widget _infoCell(String label, String value, PdfColor color) =>
-      pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text(label,
-              style: const pw.TextStyle(
-                  color: PdfColors.grey600, fontSize: 8)),
-          pw.SizedBox(height: 2),
-          pw.Text(value,
-              style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 11,
-                  color: color)),
-        ],
-      );
-
-  pw.Widget _statCard(String label, String value, PdfColor valueColor,
-          PdfColor bg, PdfColor border) =>
-      pw.Expanded(
-        child: pw.Container(
-          padding: const pw.EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-          decoration: pw.BoxDecoration(
-            color: bg,
-            borderRadius: pw.BorderRadius.circular(6),
-            border: pw.Border.all(color: border),
-          ),
-          child: pw.Column(
-            children: [
-              pw.Text(value,
-                  style: pw.TextStyle(
-                      fontSize: 18,
-                      fontWeight: pw.FontWeight.bold,
-                      color: valueColor)),
-              pw.SizedBox(height: 4),
-              pw.Text(label,
-                  textAlign: pw.TextAlign.center,
-                  style: const pw.TextStyle(
-                      fontSize: 8, color: PdfColors.grey600)),
-            ],
-          ),
+    children: [
+      pw.Container(
+        width: 4,
+        height: 16,
+        decoration: pw.BoxDecoration(
+          color: color,
+          borderRadius: pw.BorderRadius.circular(2),
         ),
-      );
+      ),
+      pw.SizedBox(width: 8),
+      pw.Text(
+        title,
+        style: pw.TextStyle(
+          fontWeight: pw.FontWeight.bold,
+          fontSize: 13,
+          color: color,
+        ),
+      ),
+    ],
+  );
+
+  pw.Widget _infoCell(String label, String value, PdfColor color) => pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: [
+      pw.Text(
+        label,
+        style: const pw.TextStyle(color: PdfColors.grey600, fontSize: 8),
+      ),
+      pw.SizedBox(height: 2),
+      pw.Text(
+        value,
+        style: pw.TextStyle(
+          fontWeight: pw.FontWeight.bold,
+          fontSize: 11,
+          color: color,
+        ),
+      ),
+    ],
+  );
+
+  pw.Widget _statCard(
+    String label,
+    String value,
+    PdfColor valueColor,
+    PdfColor bg,
+    PdfColor border,
+  ) => pw.Expanded(
+    child: pw.Container(
+      padding: const pw.EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      decoration: pw.BoxDecoration(
+        color: bg,
+        borderRadius: pw.BorderRadius.circular(6),
+        border: pw.Border.all(color: border),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+              color: valueColor,
+            ),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            label,
+            textAlign: pw.TextAlign.center,
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+          ),
+        ],
+      ),
+    ),
+  );
 
   pw.Widget _legendItem(String label, PdfColor color) => pw.Row(
-        mainAxisSize: pw.MainAxisSize.min,
-        children: [
-          pw.Container(
-              width: 10,
-              height: 10,
-              decoration: pw.BoxDecoration(
-                  color: color, shape: pw.BoxShape.circle)),
-          pw.SizedBox(width: 5),
-          pw.Text(label,
-              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-        ],
-      );
+    mainAxisSize: pw.MainAxisSize.min,
+    children: [
+      pw.Container(
+        width: 10,
+        height: 10,
+        decoration: pw.BoxDecoration(color: color, shape: pw.BoxShape.circle),
+      ),
+      pw.SizedBox(width: 5),
+      pw.Text(
+        label,
+        style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+      ),
+    ],
+  );
 
   // ── Flutter UI ────────────────────────────────────────────────────────────
 
@@ -745,237 +916,347 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return MainScaffold(
       title: 'Röntgen Sonuçları',
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Breadcrumb
+            // ── Breadcrumb ─────────────────────────────────────────────────
             Row(
               children: [
                 TextButton(
                   onPressed: () => context.go('/history'),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                   child: const Text('Röntgen Sonuçları'),
                 ),
                 const Icon(Icons.chevron_right, size: 16),
-                Text('#${widget.analysisId}'),
+                Text(
+                  '#${widget.analysisId}',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
 
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Sol - Röntgen görseli + bounding box
-                Expanded(
-                  flex: 3,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final imgWidth = constraints.maxWidth;
-                                final imgHeight = imgWidth * 0.6;
-                                return SizedBox(
+            const SizedBox(height: 12),
+
+            // ── Röntgen Görseli (tam genişlik) ─────────────────────────────
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.medical_information_outlined, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'Röntgen Görseli',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final imgWidth = constraints.maxWidth;
+                          final imgHeight = imgWidth * 0.65;
+                          return SizedBox(
+                            width: imgWidth,
+                            height: imgHeight,
+                            child: Stack(
+                              children: [
+                                Image.file(
+                                  File(_xray!['imagePath']),
                                   width: imgWidth,
                                   height: imgHeight,
-                                  child: Stack(
-                                    children: [
-                                      Image.file(
-                                        File(_xray!['imagePath']),
-                                        width: imgWidth,
-                                        height: imgHeight,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            Container(
-                                              color: Colors.black87,
-                                              child: const Center(
-                                                child: Icon(Icons.image,
-                                                    color: Colors.white54,
-                                                    size: 48),
-                                              ),
-                                            ),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: Colors.black87,
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: Colors.white54,
+                                        size: 56,
                                       ),
-                                      ..._predictions.map((p) {
-                                        final x1 = (p['x1'] as num).toDouble() * imgWidth;
-                                        final y1 = (p['y1'] as num).toDouble() * imgHeight;
-                                        final x2 = (p['x2'] as num).toDouble() * imgWidth;
-                                        final y2 = (p['y2'] as num).toDouble() * imgHeight;
-                                        final color = _getBboxColor(p['disease']);
-                                        return Positioned(
-                                          left: x1,
-                                          top: y1,
-                                          width: x2 - x1,
-                                          height: y2 - y1,
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: color, width: 2),
-                                            ),
-                                            child: Align(
-                                              alignment: Alignment.topLeft,
-                                              child: Container(
-                                                color: color.withOpacity(0.8),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 3,
-                                                        vertical: 1),
-                                                child: Text(
-                                                  '${p['disease']} %${((p['confidence'] as num) * 100).toStringAsFixed(1)}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 7,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
+                                    ),
+                                  ),
+                                ),
+                                ..._predictions.map((p) {
+                                  final x1 =
+                                      (p['x1'] as num).toDouble() * imgWidth;
+                                  final y1 =
+                                      (p['y1'] as num).toDouble() * imgHeight;
+                                  final x2 =
+                                      (p['x2'] as num).toDouble() * imgWidth;
+                                  final y2 =
+                                      (p['y2'] as num).toDouble() * imgHeight;
+                                  final color = _getBboxColor(p['disease']);
+                                  return Positioned(
+                                    left: x1,
+                                    top: y1,
+                                    width: x2 - x1,
+                                    height: y2 - y1,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: color,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Align(
+                                        alignment: Alignment.topLeft,
+                                        child: Container(
+                                          color: color.withOpacity(0.85),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 3,
+                                            vertical: 1,
+                                          ),
+                                          child: Text(
+                                            '${p['disease']} %${((p['confidence'] as num) * 100).toStringAsFixed(0)}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 7,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        );
-                                      }),
-                                    ],
-                                  ),
-                                );
-                              },
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Renkli kutular AI tarafından tespit edilen bulgulardır.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Tespit Edilen Bulgular (tam genişlik) ──────────────────────
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.bar_chart_outlined, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'Tespit Edilen Bulgular',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Tablo başlığı
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: const [
+                          SizedBox(
+                            width: 28,
+                            child: Text(
+                              '#',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Kutulara dokunarak detayları görebilirsiniz.',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          Expanded(
+                            child: Text(
+                              'Hastalık',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 72,
+                            child: Text(
+                              'Güven (%)',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(width: 12),
-
-                // Sağ - Hastalık tablosu
-                Expanded(
-                  flex: 2,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
+                    // Tablo satırları
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey.withOpacity(0.2),
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
+                        ),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Tespit Edilen Bulgular',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: const [
-                              Expanded(
-                                  flex: 1,
-                                  child: Text('#',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12))),
-                              Expanded(
-                                  flex: 4,
-                                  child: Text('Hastalık',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12))),
-                              Expanded(
-                                  flex: 2,
-                                  child: Text('Güven (%)',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12))),
-                            ],
-                          ),
-                          const Divider(),
-                          ..._predictions.asMap().entries.map((entry) {
-                            final i = entry.key;
-                            final p = entry.value;
-                            final conf = ((p['confidence'] as num) * 100)
-                                .toStringAsFixed(0);
-                            return Container(
+                        children: _predictions.asMap().entries.map((entry) {
+                          final i = entry.key;
+                          final p = entry.value;
+                          final conf = ((p['confidence'] as num) * 100)
+                              .toStringAsFixed(0);
+                          final isLast = i == _predictions.length - 1;
+                          return Container(
+                            decoration: BoxDecoration(
                               color: i % 2 == 0
                                   ? Colors.transparent
                                   : Colors.grey.withOpacity(0.05),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                      flex: 1,
-                                      child: Text('${i + 1}',
-                                          style: const TextStyle(
-                                              fontSize: 12))),
-                                  Expanded(
-                                    flex: 4,
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 8,
-                                          height: 8,
-                                          decoration: BoxDecoration(
-                                            color: _getBboxColor(
-                                                p['disease']),
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: Text(
-                                            p['disease'],
-                                            style: const TextStyle(
-                                                fontSize: 12),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
+                              border: isLast
+                                  ? null
+                                  : Border(
+                                      bottom: BorderSide(
+                                        color: Colors.grey.withOpacity(0.15),
+                                      ),
+                                    ),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 28,
+                                  child: Text(
+                                    '${i + 1}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[600],
                                     ),
                                   ),
-                                  Expanded(
-                                      flex: 2,
-                                      child: Text('%$conf',
-                                          style: const TextStyle(
-                                              fontSize: 12))),
-                                ],
-                              ),
-                            );
-                          }),
-                        ],
+                                ),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: _getBboxColor(p['disease']),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          p['disease'],
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 72,
+                                  child: Text(
+                                    '%$conf',
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // PDF butonu
-            Center(
+            // ── PDF Butonu (tam genişlik) ───────────────────────────────────
+            SizedBox(
+              height: 50,
               child: ElevatedButton.icon(
                 onPressed: _isGeneratingPdf ? null : _generatePdf,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 icon: _isGeneratingPdf
                     ? const SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2),
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
-                    : const Icon(Icons.picture_as_pdf),
-                label: Text(_isGeneratingPdf
-                    ? 'PDF Oluşturuluyor...'
-                    : 'AI Dental Raporu İndir (PDF)'),
+                    : const Icon(Icons.picture_as_pdf_outlined),
+                label: Text(
+                  _isGeneratingPdf
+                      ? 'PDF Oluşturuluyor...'
+                      : 'AI Dental Raporu İndir (PDF)',
+                  style: const TextStyle(fontSize: 15),
+                ),
               ),
             ),
+
+            const SizedBox(height: 16),
           ],
         ),
       ),
