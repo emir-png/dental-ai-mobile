@@ -575,6 +575,504 @@ Detaylı sorun giderme için `BAGLANTI_SORUNU_COZUMU.md` dosyasına bakın.
 
 ---
 
+## 🧠 Diğer Derin Öğrenme Modellerini Entegre Etme
+
+Bu uygulama, farklı derin öğrenme modellerinin kolayca entegre edilebilmesini sağlayacak şekilde tasarlanmıştır. Mevcut YOLOv11 modeli dışında başka modelleri de kullanabilirsiniz.
+
+### 🎯 Desteklenen Model Türleri
+
+Aşağıdaki model formatları ve framework'leri desteklenir:
+
+| Framework | Format | Açıklama |
+|-----------|--------|----------|
+| **YOLOv5/v8/v11** | `.pt` | Ultralytics YOLO modelleri (Nesne tespiti) |
+| **TensorFlow** | `.h5`, `.pb` | TensorFlow SavedModel veya Keras |
+| **PyTorch** | `.pt`, `.pth` | PyTorch modelleri |
+| **ONNX** | `.onnx` | Framework-agnostik format |
+| **TensorFlow Lite** | `.tflite` | Mobil için optimize edilmiş |
+| **Core ML** | `.mlmodel` | iOS için optimize edilmiş |
+
+### 📋 Model Entegrasyonu Adımları
+
+#### 1️⃣ YOLOv8 veya YOLOv5 Modeli Entegrasyonu
+
+Eğer farklı bir YOLO versiyonu kullanmak istiyorsanız:
+
+**Adım 1: Modelinizi Hazırlayın**
+```bash
+# Örnek: YOLOv8 modelini eğittiyseniz
+# best.pt dosyanızı backend/weights/ klasörüne kopyalayın
+cp /path/to/your/yolov8_best.pt backend/weights/best.pt
+```
+
+**Adım 2: backend/main.py'de Model Yolunu Güncelleyin**
+```python
+# backend/main.py dosyasında model yolu zaten generic:
+MODEL_PATH = WEIGHTS_DIR / "best.pt"
+
+# Ultralytics otomatik olarak YOLO versiyonunu algılar
+model = YOLO(str(MODEL_PATH))
+```
+
+**Adım 3: Sınıf İsimlerini Doğrulayın**
+```python
+# Model yüklendikten sonra sınıf isimlerini kontrol edin
+print(f"Model classes: {model.names}")
+```
+
+Model başarıyla entegre edildi! Uygulama otomatik olarak yeni model ile çalışacaktır.
+
+---
+
+#### 2️⃣ Google Drive'dan Özel Model Yükleme
+
+Kendi modelinizi Google Drive'dan otomatik indirmek için:
+
+**Adım 1: Modelinizi Google Drive'a Yükleyin**
+1. Google Drive'a modelinizi yükleyin
+2. Dosyayı sağ tıklayın → "Get link" → "Anyone with the link"
+3. Paylaşım linkini kopyalayın
+
+**Adım 2: Drive File ID'sini Alın**
+```
+Drive linki: https://drive.google.com/file/d/1ABC123XYZ/view?usp=sharing
+File ID: 1ABC123XYZ (ortadaki kısım)
+```
+
+**Adım 3: backend/main.py'yi Güncelleyin**
+```python
+# backend/main.py - Satır 25 civarı
+GDRIVE_FILE_ID = "1ABC123XYZ"  # Kendi File ID'nizi buraya yazın
+GDRIVE_URL = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
+```
+
+**Adım 4: Backend'i Yeniden Başlatın**
+```bash
+cd backend
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Yeni model otomatik olarak indirilecek ve yüklenecektir.
+
+---
+
+#### 3️⃣ TensorFlow/Keras Modeli Entegrasyonu
+
+TensorFlow veya Keras modeli kullanmak için:
+
+**Adım 1: Bağımlılıkları Ekleyin**
+```bash
+# backend/requirements.txt dosyasına ekleyin:
+tensorflow>=2.13.0
+# veya
+tensorflow-cpu>=2.13.0  # CPU versiyonu (daha küçük)
+```
+
+**Adım 2: backend/main.py'yi Düzenleyin**
+```python
+# backend/main.py
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+import numpy as np
+
+# Model yükleme
+MODEL_PATH = WEIGHTS_DIR / "my_model.h5"
+model = load_model(str(MODEL_PATH))
+
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    """TensorFlow model ile tahmin"""
+    
+    # Görüntüyü yükle
+    contents = await file.read()
+    image = Image.open(io.BytesIO(contents)).convert("RGB")
+    
+    # Ön işleme (modelinize göre ayarlayın)
+    img_array = np.array(image.resize((224, 224)))
+    img_array = img_array / 255.0  # Normalizasyon
+    img_array = np.expand_dims(img_array, axis=0)
+    
+    # Tahmin
+    predictions = model.predict(img_array)
+    
+    # Sonucu formatla
+    result = {
+        "predictions": [
+            {
+                "class": class_names[i],
+                "confidence": float(predictions[0][i])
+            }
+            for i in range(len(class_names))
+        ]
+    }
+    
+    return result
+```
+
+---
+
+#### 4️⃣ PyTorch Özel Model Entegrasyonu
+
+PyTorch ile eğitilmiş özel bir model kullanmak için:
+
+**Adım 1: Model Sınıfını Tanımlayın**
+```python
+# backend/model_definition.py (yeni dosya)
+import torch
+import torch.nn as nn
+
+class CustomDentalModel(nn.Module):
+    def __init__(self, num_classes=6):
+        super(CustomDentalModel, self).__init__()
+        # Modelinizin mimarisini buraya tanımlayın
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            # ... diğer katmanlar
+        )
+        self.classifier = nn.Linear(512, num_classes)
+    
+    def forward(self, x):
+        x = self.features(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
+```
+
+**Adım 2: backend/main.py'de Model Yükleyin**
+```python
+# backend/main.py
+import torch
+from model_definition import CustomDentalModel
+
+# Model yükleme
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = CustomDentalModel(num_classes=6)
+model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+model.to(device)
+model.eval()
+
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    """PyTorch model ile tahmin"""
+    
+    # Görüntüyü yükle ve ön işle
+    contents = await file.read()
+    image = Image.open(io.BytesIO(contents)).convert("RGB")
+    
+    # Transforms (modelinize göre ayarlayın)
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                           std=[0.229, 0.224, 0.225])
+    ])
+    
+    img_tensor = transform(image).unsqueeze(0).to(device)
+    
+    # Tahmin
+    with torch.no_grad():
+        outputs = model(img_tensor)
+        probabilities = torch.nn.functional.softmax(outputs, dim=1)
+    
+    # Sonucu formatla
+    results = []
+    for idx, prob in enumerate(probabilities[0]):
+        results.append({
+            "class": class_names[idx],
+            "confidence": float(prob)
+        })
+    
+    return {"predictions": results}
+```
+
+---
+
+#### 5️⃣ ONNX Model Entegrasyonu (Cross-Platform)
+
+ONNX format'ı tüm framework'lerle uyumludur ve daha hızlı inference sağlar:
+
+**Adım 1: Modelinizi ONNX'e Çevirin**
+```python
+# PyTorch'tan ONNX'e
+import torch
+
+dummy_input = torch.randn(1, 3, 224, 224)
+torch.onnx.export(
+    model,
+    dummy_input,
+    "backend/weights/model.onnx",
+    export_params=True,
+    opset_version=11,
+    input_names=['input'],
+    output_names=['output']
+)
+```
+
+**Adım 2: ONNX Runtime Kurun**
+```bash
+# backend/requirements.txt
+onnxruntime>=1.15.0
+# veya GPU versiyonu
+onnxruntime-gpu>=1.15.0
+```
+
+**Adım 3: backend/main.py'de ONNX Kullanın**
+```python
+# backend/main.py
+import onnxruntime as ort
+import numpy as np
+
+# ONNX model yükleme
+MODEL_PATH = WEIGHTS_DIR / "model.onnx"
+ort_session = ort.InferenceSession(str(MODEL_PATH))
+
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    """ONNX model ile tahmin"""
+    
+    # Görüntü ön işleme
+    contents = await file.read()
+    image = Image.open(io.BytesIO(contents)).convert("RGB")
+    img_array = np.array(image.resize((224, 224)))
+    img_array = img_array.transpose(2, 0, 1)  # HWC -> CHW
+    img_array = img_array / 255.0
+    img_array = np.expand_dims(img_array, axis=0).astype(np.float32)
+    
+    # ONNX inference
+    ort_inputs = {ort_session.get_inputs()[0].name: img_array}
+    ort_outputs = ort_session.run(None, ort_inputs)
+    
+    # Sonuçları işle
+    predictions = ort_outputs[0][0]
+    
+    results = []
+    for idx, score in enumerate(predictions):
+        results.append({
+            "class": class_names[idx],
+            "confidence": float(score)
+        })
+    
+    return {"predictions": results}
+```
+
+---
+
+### 🔄 Çoklu Model Desteği (Model Switching)
+
+Birden fazla modeli aynı anda desteklemek için:
+
+**backend/main.py örneği:**
+```python
+from enum import Enum
+
+class ModelType(str, Enum):
+    YOLO = "yolo"
+    TENSORFLOW = "tensorflow"
+    PYTORCH = "pytorch"
+    ONNX = "onnx"
+
+# Tüm modelleri yükle
+models = {
+    ModelType.YOLO: YOLO("weights/yolo_best.pt"),
+    ModelType.TENSORFLOW: load_model("weights/tf_model.h5"),
+    # ... diğer modeller
+}
+
+@app.post("/predict")
+async def predict(
+    file: UploadFile = File(...),
+    model_type: ModelType = ModelType.YOLO,
+    conf: float = 0.25
+):
+    """Seçilen model ile tahmin yap"""
+    
+    selected_model = models[model_type]
+    
+    # Model tipine göre farklı işlemler
+    if model_type == ModelType.YOLO:
+        # YOLO inference
+        results = selected_model.predict(...)
+    elif model_type == ModelType.TENSORFLOW:
+        # TensorFlow inference
+        results = selected_model.predict(...)
+    # ...
+    
+    return results
+```
+
+**Flutter tarafında model seçimi:**
+```dart
+// lib/core/services/ai_service.dart
+Future<AnalysisResult> analyzeImage(
+  File imageFile, {
+  String modelType = 'yolo',  // 'yolo', 'tensorflow', 'pytorch'
+}) async {
+  final request = http.MultipartRequest(
+    'POST',
+    Uri.parse('$kAiBaseUrl/predict?model_type=$modelType'),
+  );
+  
+  request.files.add(
+    await http.MultipartFile.fromPath('file', imageFile.path),
+  );
+  
+  // ... rest of the code
+}
+```
+
+---
+
+### 📦 Model Optimizasyon İpuçları
+
+#### GPU Hızlandırma
+```python
+# CUDA kullanılabilirliğini kontrol et
+import torch
+print(f"CUDA available: {torch.cuda.is_available()}")
+print(f"CUDA device: {torch.cuda.get_device_name(0)}")
+
+# Model'i GPU'ya taşı
+model = model.cuda()
+```
+
+#### Quantization (Model Boyutunu Küçültme)
+```python
+# PyTorch Dynamic Quantization
+import torch.quantization as quantization
+
+quantized_model = quantization.quantize_dynamic(
+    model, {torch.nn.Linear}, dtype=torch.qint8
+)
+```
+
+#### Batch Processing
+```python
+# Çoklu görüntü işleme
+@app.post("/predict/batch")
+async def predict_batch(files: List[UploadFile] = File(...)):
+    """Toplu tahmin"""
+    results = []
+    for file in files:
+        result = await predict_single(file)
+        results.append(result)
+    return {"batch_results": results}
+```
+
+---
+
+### 📝 Model Yapılandırma Dosyası (Önerilen)
+
+Model ayarlarını merkezi bir yapılandırma dosyasında tutun:
+
+**backend/model_config.yaml:**
+```yaml
+models:
+  yolo_v11:
+    type: yolo
+    path: weights/yolo_v11_best.pt
+    confidence_threshold: 0.25
+    classes:
+      0: Caries
+      1: Crown - bridge
+      2: Filling
+      3: Implant
+      4: Post-screw
+      5: Root Canal Obturation
+  
+  custom_cnn:
+    type: tensorflow
+    path: weights/custom_cnn.h5
+    input_size: [224, 224]
+    preprocessing:
+      normalize: true
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    classes:
+      0: Healthy
+      1: Diseased
+
+active_model: yolo_v11
+```
+
+**Python'da kullanımı:**
+```python
+import yaml
+
+with open('model_config.yaml', 'r') as f:
+    config = yaml.safe_load(f)
+
+active_model_config = config['models'][config['active_model']]
+MODEL_PATH = active_model_config['path']
+```
+
+---
+
+### 🧪 Model Test ve Validasyon
+
+Yeni model entegrasyonunu test etmek için:
+
+```bash
+# Backend test komutu
+curl -X POST "http://localhost:8000/predict" \
+  -F "file=@test_xray.jpg" \
+  -F "model_type=yolo"
+
+# Yanıt formatını kontrol edin
+# Beklenen: {"predictions": [...]}
+```
+
+**Test script'i (Python):**
+```python
+# backend/test_model.py
+import requests
+
+def test_model(image_path, model_type='yolo'):
+    """Model entegrasyonunu test et"""
+    
+    url = "http://localhost:8000/predict"
+    
+    with open(image_path, 'rb') as f:
+        files = {'file': f}
+        params = {'model_type': model_type}
+        
+        response = requests.post(url, files=files, params=params)
+    
+    if response.status_code == 200:
+        print(f"✅ Model test başarılı: {model_type}")
+        print(f"Sonuçlar: {response.json()}")
+    else:
+        print(f"❌ Model test başarısız: {response.status_code}")
+        print(f"Hata: {response.text}")
+
+# Test
+test_model("test_images/dental_xray_1.jpg", "yolo")
+```
+
+---
+
+### 💡 Best Practices
+
+1. **Model Versiyonlama**: Her model için versiyon numarası kullanın (`model_v1.0.0.pt`)
+2. **Model Metadata**: Model ile birlikte sınıf isimleri ve ayarları saklayın
+3. **Performans İzleme**: Inference sürelerini logla ve optimize et
+4. **Fallback Mekanizması**: Ana model başarısız olursa yedek model kullan
+5. **Cache**: Sık kullanılan sonuçları önbelleğe al
+6. **Logging**: Tüm tahminleri ve hataları logla
+
+---
+
+### 📚 Ek Kaynaklar
+
+- **Ultralytics Docs**: https://docs.ultralytics.com/
+- **TensorFlow Model Garden**: https://github.com/tensorflow/models
+- **PyTorch Hub**: https://pytorch.org/hub/
+- **ONNX Model Zoo**: https://github.com/onnx/models
+- **Hugging Face Models**: https://huggingface.co/models
+
+---
+
 ## 🤝 Katkıda Bulunma
 
 Katkılarınızı bekliyoruz! Lütfen aşağıdaki adımları izleyin:
