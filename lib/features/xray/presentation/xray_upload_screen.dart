@@ -103,34 +103,65 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
               builder: (context, constraints) {
                 final isWide = constraints.maxWidth >= 600;
                 final uploadCard = Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white,
+                          AppColors.primaryLight.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: const [
-                            Icon(
-                              Icons.upload_file,
-                              size: 20,
-                              color: AppColors.primary,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [AppColors.gradientStart, AppColors.gradientEnd],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.upload_file,
+                                size: 24,
+                                color: Colors.white,
+                              ),
                             ),
-                            SizedBox(width: 8),
-                            Text(
+                            const SizedBox(width: 12),
+                            const Text(
                               'Yeni Diş Röntgeni Analizi',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
-                        // Dosya seç butonu
+                        // File selection area
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.primary),
-                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            color: AppColors.primaryLight.withOpacity(0.1),
                           ),
                           child: Row(
                             children: [
@@ -206,36 +237,63 @@ class _XrayUploadScreenState extends State<XrayUploadScreen> {
                 );
 
                 final infoCard = Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.accentGreen.withOpacity(0.1),
+                          AppColors.primaryLight.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Row(
                           children: [
-                            Icon(Icons.info_outline, color: AppColors.primary),
-                            SizedBox(width: 8),
-                            Text(
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.info.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.info_outline,
+                                color: AppColors.info,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
                               'Bilgi',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 12),
-                        Text(
+                        const SizedBox(height: 16),
+                        const Text(
                           'Bu panel, diş röntgenlerinden hastalık tespiti için YOLOv11 tabanlı modeli kullanır.',
-                          style: TextStyle(fontSize: 13),
+                          style: TextStyle(fontSize: 13, height: 1.5),
                         ),
-                        SizedBox(height: 12),
-                        _BilgiItem(
-                          text:
-                              'Röntgen yüklendikten sonra model çalıştırılacaktır.',
+                        const SizedBox(height: 12),
+                        const _BilgiItem(
+                          text: 'Röntgen yüklendikten sonra model çalıştırılacaktır.',
                         ),
-                        _BilgiItem(
-                          text:
-                              'Sonuçlar Analiz Sonucu sayfasında gösterilecektir.',
+                        const _BilgiItem(
+                          text: 'Sonuçlar Analiz Sonucu sayfasında gösterilecektir.',
                         ),
-                        _BilgiItem(
+                        const _BilgiItem(
                           text: 'Bu sonuçlar hasta geçmişine kaydedilebilir.',
                         ),
                       ],

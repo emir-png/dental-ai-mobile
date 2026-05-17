@@ -67,31 +67,60 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Mavi arka plan
+          // Dental gradient background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF1A73E8), Color(0xFF0D47A1)],
+                colors: [AppColors.gradientStart, AppColors.gradientEnd],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
           ),
-          // Diş görseli (sol taraf)
+          // Decorative tooth patterns
           Positioned(
-            left: -40,
-            top: 0,
-            bottom: 0,
-            width: MediaQuery.of(context).size.width * 0.5,
-            child: const Center(
+            left: -60,
+            top: 50,
+            child: Opacity(
+              opacity: 0.1,
               child: Icon(
-                Icons.medical_services_outlined,
-                size: 280,
-                color: Colors.white24,
+                Icons.health_and_safety_outlined,
+                size: 200,
+                color: Colors.white,
               ),
             ),
           ),
-          // Login kartı
+          Positioned(
+            right: -40,
+            bottom: 100,
+            child: Opacity(
+              opacity: 0.08,
+              child: Icon(
+                Icons.medical_services_outlined,
+                size: 180,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          // Animated tooth shapes
+          ...List.generate(5, (index) {
+            return Positioned(
+              left: (index * 80.0) - 20,
+              top: 30 + (index % 2) * 20,
+              child: Opacity(
+                opacity: 0.12,
+                child: Container(
+                  width: 40,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+            );
+          }),
+          // Login card
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -109,11 +138,43 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Dental logo icon
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [AppColors.gradientStart, AppColors.gradientEnd],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.medical_services,
+                              size: 48,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
                           const Text(
-                            'Giriş Yap',
+                            'Dental AI',
                             style: TextStyle(
-                              fontSize: 28,
+                              fontSize: 32,
                               fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Diş Sağlığı Analiz Sistemi',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
                             ),
                           ),
                           const SizedBox(height: 32),

@@ -99,31 +99,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Arka plan degradesi
+          // Dental gradient background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF1A73E8), Color(0xFF0D47A1)],
+                colors: [AppColors.gradientStart, AppColors.gradientEnd],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
           ),
-          // Dekoratif ikon
+          // Decorative dental patterns
           Positioned(
-            left: -40,
-            top: 0,
-            bottom: 0,
-            width: MediaQuery.of(context).size.width * 0.5,
-            child: const Center(
+            right: -50,
+            top: 80,
+            child: Opacity(
+              opacity: 0.1,
               child: Icon(
-                Icons.medical_services_outlined,
-                size: 280,
-                color: Colors.white24,
+                Icons.health_and_safety_outlined,
+                size: 180,
+                color: Colors.white,
               ),
             ),
           ),
-          // Kayıt kartı
+          Positioned(
+            left: -30,
+            bottom: 120,
+            child: Opacity(
+              opacity: 0.08,
+              child: Icon(
+                Icons.medical_services_outlined,
+                size: 160,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          // Registration card
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -143,11 +154,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // Dental logo icon
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [AppColors.gradientStart, AppColors.gradientEnd],
+                                ),
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.person_add_alt_1,
+                                size: 40,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
                             const Text(
-                              'Hesap Oluştur',
+                              'Yeni Hesap Oluştur',
                               style: TextStyle(
-                                fontSize: 26,
+                                fontSize: 28,
                                 fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Dental AI sistemine katılın',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
                               ),
                             ),
                             const SizedBox(height: 28),
