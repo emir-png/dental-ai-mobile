@@ -275,4 +275,26 @@ class DatabaseHelper {
       whereArgs: [xrayId],
     );
   }
+
+  Future<void> deletePrediction(int id) async {
+    final db = await database;
+    await db.delete(
+      'predictions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Deletes an xray and all its related predictions
+  Future<void> deleteXray(int id) async {
+    final db = await database;
+    // First delete all predictions for this xray
+    await deletePredictionsByXrayId(id);
+    // Then delete the xray itself
+    await db.delete(
+      'xrays',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }

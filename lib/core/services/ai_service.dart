@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as path;
 
 /// Dental AI backend adresi.
 ///
@@ -24,8 +26,38 @@ class AiService {
     final uri = Uri.parse('$kAiBaseUrl/predict');
 
     final request = http.MultipartRequest('POST', uri);
+    
+    // Dosya uzantısına göre content-type belirle
+    final fileExtension = path.extension(imagePath).toLowerCase();
+    MediaType? contentType;
+    
+    switch (fileExtension) {
+      case '.jpg':
+      case '.jpeg':
+        contentType = MediaType('image', 'jpeg');
+        break;
+      case '.png':
+        contentType = MediaType('image', 'png');
+        break;
+      case '.gif':
+        contentType = MediaType('image', 'gif');
+        break;
+      case '.bmp':
+        contentType = MediaType('image', 'bmp');
+        break;
+      case '.webp':
+        contentType = MediaType('image', 'webp');
+        break;
+      default:
+        contentType = MediaType('image', 'jpeg'); // Varsayılan
+    }
+    
     request.files.add(
-      await http.MultipartFile.fromPath('file', imagePath),
+      await http.MultipartFile.fromPath(
+        'file',
+        imagePath,
+        contentType: contentType,
+      ),
     );
 
     late http.StreamedResponse streamed;

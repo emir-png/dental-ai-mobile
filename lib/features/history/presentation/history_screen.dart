@@ -58,6 +58,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  Future<void> _deleteXray(int xrayId) async {
+    try {
+      await DatabaseHelper.instance.deleteXray(xrayId);
+      
+      // Listeyi yeniden yükle
+      await _loadXrays();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Röntgen başarıyla silindi'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Röntgen silinemedi: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   void _onSearch(String query) {
     setState(() {
       _filtered = _xrays.where((x) {
@@ -152,7 +180,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
                   const Expanded(
-                    flex: 2,
+                    flex: 3,
                     child: Text('İşlem',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13)),
@@ -246,21 +274,69 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                       ),
                                     ),
                                   ),
-                                  // İşlem butonu
+                                  // İşlem butonları
                                   Expanded(
-                                    flex: 2,
-                                    child: ElevatedButton(
-                                      onPressed: () => context
-                                          .go('/results/${xray['id']}'),
-                                      style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        minimumSize: const Size(0, 32),
-                                      ),
-                                      child: const Text(
-                                        'Sonuçları Gör',
-                                        style: TextStyle(fontSize: 11),
-                                      ),
+                                    flex: 3,
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: () => context
+                                                .go('/results/${xray['id']}'),
+                                            style: ElevatedButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 6, vertical: 4),
+                                              minimumSize: const Size(0, 32),
+                                            ),
+                                            child: const Text(
+                                              'Sonuçları Gör',
+                                              style: TextStyle(fontSize: 11),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            size: 20,
+                                          ),
+                                          color: AppColors.error,
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(
+                                            minWidth: 32,
+                                            minHeight: 32,
+                                          ),
+                                          onPressed: () async {
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('Röntgeni Sil'),
+                                                content: const Text(
+                                                  'Bu röntgeni ve tüm ilişkili bulgularını silmek istediğinizden emin misiniz?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(context).pop(false),
+                                                    child: const Text('İptal'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(context).pop(true),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: AppColors.error,
+                                                    ),
+                                                    child: const Text('Sil'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              await _deleteXray(xray['id'] as int);
+                                            }
+                                          },
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],

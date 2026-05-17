@@ -23,6 +23,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
   bool _isLoading = true;
   bool _isAnalyzing = false;
   bool _isGeneratingPdf = false;
+  int? _selectedPredictionIndex; // null = tümünü göster
 
   @override
   void initState() {
@@ -76,8 +77,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
       }
 
       final xray = await DatabaseHelper.instance.getXrayById(id);
-      final predictions =
-          await DatabaseHelper.instance.getPredictionsByXrayId(id);
+      final predictions = await DatabaseHelper.instance.getPredictionsByXrayId(
+        id,
+      );
 
       if (mounted) {
         setState(() {
@@ -103,6 +105,44 @@ class _ResultsScreenState extends State<ResultsScreen> {
             content: Text('Analiz hatası: $e'),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 8),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deletePrediction(int predictionId) async {
+    try {
+      await DatabaseHelper.instance.deletePrediction(predictionId);
+      
+      // Listeyi yeniden yükle
+      final id = int.tryParse(widget.analysisId);
+      if (id != null) {
+        final predictions = await DatabaseHelper.instance.getPredictionsByXrayId(id);
+        if (mounted) {
+          setState(() {
+            _predictions = predictions;
+            // Eğer seçili bulgu silindiyse seçimi kaldır
+            if (_selectedPredictionIndex != null &&
+                _selectedPredictionIndex! >= _predictions.length) {
+              _selectedPredictionIndex = null;
+            }
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Bulgu başarıyla silindi'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Bulgu silinemedi: $e'),
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -257,7 +297,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
         pw.MultiPage(
           theme: theme,
           pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(0),
+          margin: const pw.EdgeInsets.only(
+            top: 80,
+            bottom: 50,
+            left: 0,
+            right: 0,
+          ),
           header: (context) => pw.Container(
             color: primaryColor,
             padding: const pw.EdgeInsets.symmetric(
@@ -410,322 +455,307 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
             pw.SizedBox(height: 20),
 
-            // ── Röntgen Görseli + Bulgular Tablosu ───────────────────────
+            // ── Röntgen Görseli ───────────────────────────────────────────
             pw.Padding(
               padding: const pw.EdgeInsets.symmetric(horizontal: 32),
-              child: pw.Row(
+              child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  // Görsel
-                  pw.Expanded(
-                    flex: 5,
-                    child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        _sectionTitle('Röntgen Görseli', primaryColor),
-                        pw.SizedBox(height: 8),
-                        pw.Container(
-                          decoration: pw.BoxDecoration(
-                            borderRadius: pw.BorderRadius.circular(8),
-                            border: pw.Border.all(color: borderColor),
-                          ),
-                          child: pw.ClipRRect(
-                            horizontalRadius: 8,
-                            verticalRadius: 8,
-                            child: pw.LayoutBuilder(
-                              builder: (context, constraints) {
-                                final imgW = constraints?.maxWidth ?? 280.0;
-                                const imgH = 220.0;
-                                return pw.SizedBox(
-                                  width: imgW,
-                                  height: imgH,
-                                  child: pw.Stack(
-                                    children: [
-                                      xrayImage != null
-                                          ? pw.Image(
-                                              xrayImage,
-                                              width: imgW,
-                                              height: imgH,
-                                              fit: pw.BoxFit.cover,
-                                            )
-                                          : pw.Container(
-                                              width: imgW,
-                                              height: imgH,
-                                              color: PdfColors.grey200,
-                                              child: pw.Center(
-                                                child: pw.Text(
-                                                  'Görsel yüklenemedi',
-                                                  style: const pw.TextStyle(
-                                                    color: PdfColors.grey,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                      ..._predictions.map((p) {
-                                        final x1 =
-                                            (p['x1'] as num).toDouble() * imgW;
-                                        final y1 =
-                                            (p['y1'] as num).toDouble() * imgH;
-                                        final x2 =
-                                            (p['x2'] as num).toDouble() * imgW;
-                                        final y2 =
-                                            (p['y2'] as num).toDouble() * imgH;
-                                        final bColor = _getPdfColor(
-                                          p['disease'] as String,
-                                        );
-                                        final disease = p['disease'] as String;
-                                        final conf =
-                                            ((p['confidence'] as num) * 100)
-                                                .toStringAsFixed(0);
-                                        return pw.Positioned(
-                                          left: x1,
-                                          top: y1,
-                                          child: pw.Container(
-                                            width: x2 - x1,
-                                            height: y2 - y1,
-                                            decoration: pw.BoxDecoration(
-                                              border: pw.Border.all(
-                                                color: bColor,
-                                                width: 1.5,
-                                              ),
-                                            ),
-                                            child: pw.Align(
-                                              alignment: pw.Alignment.topLeft,
-                                              child: pw.Container(
-                                                color: bColor,
-                                                padding:
-                                                    const pw.EdgeInsets.symmetric(
-                                                      horizontal: 2,
-                                                      vertical: 1,
-                                                    ),
-                                                child: pw.Text(
-                                                  '$disease %$conf',
-                                                  style: pw.TextStyle(
-                                                    color: PdfColors.white,
-                                                    fontSize: 5,
-                                                    fontWeight:
-                                                        pw.FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
+                  _sectionTitle('Röntgen Görseli', primaryColor),
+                  pw.SizedBox(height: 8),
+                  pw.Container(
+                    decoration: pw.BoxDecoration(
+                      borderRadius: pw.BorderRadius.circular(8),
+                      border: pw.Border.all(color: borderColor),
+                    ),
+                    child: pw.ClipRRect(
+                      horizontalRadius: 8,
+                      verticalRadius: 8,
+                      child: pw.Center(
+                        child: pw.SizedBox(
+                          width: 450,
+                          height: 280,
+                          child: pw.Stack(
+                            children: [
+                              xrayImage != null
+                                  ? pw.Image(
+                                      xrayImage,
+                                      width: 450,
+                                      height: 280,
+                                      fit: pw.BoxFit.cover,
+                                    )
+                                  : pw.Container(
+                                      width: 450,
+                                      height: 280,
+                                      color: PdfColors.grey200,
+                                      child: pw.Center(
+                                        child: pw.Text(
+                                          'Görsel yüklenemedi',
+                                          style: const pw.TextStyle(
+                                            color: PdfColors.grey,
                                           ),
-                                        );
-                                      }),
-                                    ],
+                                        ),
+                                      ),
+                                    ),
+                              ..._predictions.map((p) {
+                                final x1 = (p['x1'] as num).toDouble() * 450;
+                                final y1 = (p['y1'] as num).toDouble() * 280;
+                                final x2 = (p['x2'] as num).toDouble() * 450;
+                                final y2 = (p['y2'] as num).toDouble() * 280;
+                                final bColor = _getPdfColor(
+                                  p['disease'] as String,
+                                );
+                                final disease = p['disease'] as String;
+                                final conf = ((p['confidence'] as num) * 100)
+                                    .toStringAsFixed(0);
+                                return pw.Positioned(
+                                  left: x1,
+                                  top: y1,
+                                  child: pw.Container(
+                                    width: x2 - x1,
+                                    height: y2 - y1,
+                                    decoration: pw.BoxDecoration(
+                                      border: pw.Border.all(
+                                        color: bColor,
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: pw.Align(
+                                      alignment: pw.Alignment.topLeft,
+                                      child: pw.Container(
+                                        color: bColor,
+                                        padding: const pw.EdgeInsets.symmetric(
+                                          horizontal: 2,
+                                          vertical: 1,
+                                        ),
+                                        child: pw.Text(
+                                          '$disease %$conf',
+                                          style: pw.TextStyle(
+                                            color: PdfColors.white,
+                                            fontSize: 5,
+                                            fontWeight: pw.FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 );
-                              },
-                            ),
-                          ),
-                        ),
-                        pw.SizedBox(height: 6),
-                        pw.Text(
-                          'Renkli kutular: AI tarafından tespit edilen bulgular.',
-                          style: const pw.TextStyle(
-                            color: PdfColors.grey500,
-                            fontSize: 8,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  pw.SizedBox(width: 20),
-
-                  // Bulgular tablosu
-                  pw.Expanded(
-                    flex: 4,
-                    child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        _sectionTitle('Tespit Edilen Bulgular', primaryColor),
-                        pw.SizedBox(height: 8),
-                        // Tablo başlığı
-                        pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 7,
-                          ),
-                          decoration: pw.BoxDecoration(
-                            color: primaryColor,
-                            borderRadius: const pw.BorderRadius.only(
-                              topLeft: pw.Radius.circular(6),
-                              topRight: pw.Radius.circular(6),
-                            ),
-                          ),
-                          child: pw.Row(
-                            children: [
-                              pw.Expanded(
-                                flex: 1,
-                                child: pw.Text(
-                                  '#',
-                                  style: pw.TextStyle(
-                                    color: PdfColors.white,
-                                    fontWeight: pw.FontWeight.bold,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
-                              pw.Expanded(
-                                flex: 2,
-                                child: pw.Text(
-                                  'Diş No',
-                                  style: pw.TextStyle(
-                                    color: PdfColors.white,
-                                    fontWeight: pw.FontWeight.bold,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
-                              pw.Expanded(
-                                flex: 5,
-                                child: pw.Text(
-                                  'Tanı',
-                                  style: pw.TextStyle(
-                                    color: PdfColors.white,
-                                    fontWeight: pw.FontWeight.bold,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
-                              pw.Expanded(
-                                flex: 2,
-                                child: pw.Text(
-                                  'Güven',
-                                  style: pw.TextStyle(
-                                    color: PdfColors.white,
-                                    fontWeight: pw.FontWeight.bold,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
+                              }),
                             ],
                           ),
                         ),
-                        // Tablo satırları
-                        ..._predictions.asMap().entries.map((entry) {
-                          final i = entry.key;
-                          final p = entry.value;
-                          final conf = ((p['confidence'] as num) * 100)
-                              .toStringAsFixed(1);
-                          final disease = p['disease'] as String;
-                          final dColor = _getPdfColor(disease);
-                          final xC =
-                              ((p['x1'] as num) + (p['x2'] as num)) / 2;
-                          final yC =
-                              ((p['y1'] as num) + (p['y2'] as num)) / 2;
-                          final toothNo = _estimateToothNumber(
-                              xC.toDouble(), yC.toDouble());
-                          return pw.Container(
-                            padding: const pw.EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: pw.BoxDecoration(
-                              color: i % 2 == 0
-                                  ? PdfColors.white
-                                  : const PdfColor.fromInt(0xFFF8FAFF),
-                              border: pw.Border(
-                                bottom: pw.BorderSide(
-                                  color: borderColor,
-                                  width: 0.5,
-                                ),
-                                left: pw.BorderSide(color: borderColor),
-                                right: pw.BorderSide(color: borderColor),
-                              ),
-                            ),
-                            child: pw.Row(
-                              children: [
-                                pw.Expanded(
-                                  flex: 1,
-                                  child: pw.Text(
-                                    '${i + 1}',
-                                    style: const pw.TextStyle(
-                                      fontSize: 9,
-                                      color: PdfColors.grey700,
-                                    ),
-                                  ),
-                                ),
-                                pw.Expanded(
-                                  flex: 2,
-                                  child: pw.Container(
-                                    padding: const pw.EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                      vertical: 1,
-                                    ),
-                                    decoration: pw.BoxDecoration(
-                                      color: dColor,
-                                      borderRadius:
-                                          pw.BorderRadius.circular(3),
-                                    ),
-                                    child: pw.Text(
-                                      toothNo,
-                                      style: pw.TextStyle(
-                                        fontSize: 8,
-                                        fontWeight: pw.FontWeight.bold,
-                                        color: PdfColors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                pw.Expanded(
-                                  flex: 5,
-                                  child: pw.Row(
-                                    children: [
-                                      pw.Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: pw.BoxDecoration(
-                                          color: dColor,
-                                          shape: pw.BoxShape.circle,
-                                        ),
-                                      ),
-                                      pw.SizedBox(width: 5),
-                                      pw.Expanded(
-                                        child: pw.Text(
-                                          disease,
-                                          style: const pw.TextStyle(
-                                            fontSize: 9,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                pw.Expanded(
-                                  flex: 2,
-                                  child: pw.Text(
-                                    '%$conf',
-                                    style: pw.TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: pw.FontWeight.bold,
-                                      color: successColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                        // Alt köşe yuvarlama
-                        pw.Container(
-                          height: 6,
-                          decoration: pw.BoxDecoration(
-                            color: bgLight,
-                            borderRadius: const pw.BorderRadius.only(
-                              bottomLeft: pw.Radius.circular(6),
-                              bottomRight: pw.Radius.circular(6),
-                            ),
-                            border: pw.Border.all(color: borderColor),
-                          ),
-                        ),
-                      ],
+                      ),
+                    ),
+                  ),
+                  pw.SizedBox(height: 6),
+                  pw.Text(
+                    'Renkli kutular: AI tarafından tespit edilen bulgular.',
+                    style: const pw.TextStyle(
+                      color: PdfColors.grey500,
+                      fontSize: 8,
                     ),
                   ),
                 ],
               ),
             ),
+
+            pw.SizedBox(height: 20),
+
+            // ── Tespit Edilen Bulgular Tablosu ────────────────────────────
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 32),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  _sectionTitle('Tespit Edilen Bulgular', primaryColor),
+                  pw.SizedBox(height: 8),
+                ],
+              ),
+            ),
+
+            // Tablo başlığı
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 32),
+              child: pw.Container(
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: pw.BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: const pw.BorderRadius.only(
+                    topLeft: pw.Radius.circular(6),
+                    topRight: pw.Radius.circular(6),
+                  ),
+                ),
+                child: pw.Row(
+                  children: [
+                    pw.SizedBox(
+                      width: 30,
+                      child: pw.Text(
+                        '#',
+                        style: pw.TextStyle(
+                          color: PdfColors.white,
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 60,
+                      child: pw.Text(
+                        'Diş No',
+                        style: pw.TextStyle(
+                          color: PdfColors.white,
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                    pw.Expanded(
+                      child: pw.Text(
+                        'Tanı',
+                        style: pw.TextStyle(
+                          color: PdfColors.white,
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 60,
+                      child: pw.Text(
+                        'Güven',
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          color: PdfColors.white,
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Tablo satırları (otomatik sayfalama)
+            ..._predictions.asMap().entries.map((entry) {
+              final i = entry.key;
+              final p = entry.value;
+              final conf =
+                  ((p['confidence'] as num) * 100).toStringAsFixed(1);
+              final disease = p['disease'] as String;
+              final dColor = _getPdfColor(disease);
+              final xC = ((p['x1'] as num) + (p['x2'] as num)) / 2;
+              final yC = ((p['y1'] as num) + (p['y2'] as num)) / 2;
+              final toothNo = _estimateToothNumber(
+                xC.toDouble(),
+                yC.toDouble(),
+              );
+              final isLast = i == _predictions.length - 1;
+              
+              return pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 32),
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: pw.BoxDecoration(
+                    color: i % 2 == 0
+                        ? PdfColors.white
+                        : const PdfColor.fromInt(0xFFF8FAFF),
+                    border: isLast
+                        ? pw.Border(
+                            bottom: pw.BorderSide(
+                              color: borderColor,
+                              width: 0.5,
+                            ),
+                            left: pw.BorderSide(color: borderColor),
+                            right: pw.BorderSide(color: borderColor),
+                          )
+                        : pw.Border(
+                            bottom: pw.BorderSide(
+                              color: borderColor,
+                              width: 0.5,
+                            ),
+                            left: pw.BorderSide(color: borderColor),
+                            right: pw.BorderSide(color: borderColor),
+                          ),
+                  ),
+                  child: pw.Row(
+                    children: [
+                      pw.SizedBox(
+                        width: 30,
+                        child: pw.Text(
+                          '${i + 1}',
+                          style: const pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
+                      ),
+                      pw.SizedBox(
+                        width: 60,
+                        child: pw.Container(
+                          padding: const pw.EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: pw.BoxDecoration(
+                            color: dColor,
+                            borderRadius: pw.BorderRadius.circular(3),
+                          ),
+                          child: pw.Text(
+                            toothNo,
+                            textAlign: pw.TextAlign.center,
+                            style: pw.TextStyle(
+                              fontSize: 8,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        child: pw.Row(
+                          children: [
+                            pw.Container(
+                              width: 8,
+                              height: 8,
+                              decoration: pw.BoxDecoration(
+                                color: dColor,
+                                shape: pw.BoxShape.circle,
+                              ),
+                            ),
+                            pw.SizedBox(width: 6),
+                            pw.Expanded(
+                              child: pw.Text(
+                                disease,
+                                style: const pw.TextStyle(fontSize: 9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      pw.SizedBox(
+                        width: 60,
+                        child: pw.Text(
+                          '%$conf',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                            color: successColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
 
             pw.SizedBox(height: 24),
 
@@ -813,10 +843,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                               'Root Canal Obturation',
                               const PdfColor.fromInt(0xFF9C27B0),
                             ),
-                            _legendItem(
-                              'Implant',
-                              PdfColors.grey600,
-                            ),
+                            _legendItem('Implant', PdfColors.grey600),
                             _legendItem(
                               'Post-screw',
                               const PdfColor.fromInt(0xFF00BCD4),
@@ -984,7 +1011,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return MainScaffold(
       title: 'Röntgen Sonuçları',
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -998,43 +1025,67 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text('Röntgen Sonuçları'),
+                  child: const Text(
+                    'Röntgen Sonuçları',
+                    style: TextStyle(fontSize: 14),
+                  ),
                 ),
-                const Icon(Icons.chevron_right, size: 16),
+                const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
                 Text(
                   '#${widget.analysisId}',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             // ── Röntgen Görseli (tam genişlik) ─────────────────────────────
             Card(
-              elevation: 2,
+              elevation: 3,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.medical_information_outlined, size: 18),
-                        SizedBox(width: 6),
-                        Text(
-                          'Röntgen Görseli',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.medical_information_outlined, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Röntgen Görseli',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
                         ),
+                        if (_selectedPredictionIndex != null)
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _selectedPredictionIndex = null;
+                              });
+                            },
+                            icon: const Icon(Icons.clear, size: 16),
+                            label: const Text(
+                              'Tümünü Göster',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: LayoutBuilder(
@@ -1062,7 +1113,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                     ),
                                   ),
                                 ),
-                                ..._predictions.map((p) {
+                                ..._predictions.asMap().entries.map((entry) {
+                                  final idx = entry.key;
+                                  final p = entry.value;
+                                  
                                   final x1 =
                                       (p['x1'] as num).toDouble() * imgWidth;
                                   final y1 =
@@ -1072,35 +1126,65 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                   final y2 =
                                       (p['y2'] as num).toDouble() * imgHeight;
                                   final color = _getBboxColor(p['disease']);
-                                  final xC = ((p['x1'] as num) + (p['x2'] as num)) / 2;
-                                  final yC = ((p['y1'] as num) + (p['y2'] as num)) / 2;
-                                  final toothNo = _estimateToothNumber(xC.toDouble(), yC.toDouble());
+                                  final xC =
+                                      ((p['x1'] as num) + (p['x2'] as num)) / 2;
+                                  final yC =
+                                      ((p['y1'] as num) + (p['y2'] as num)) / 2;
+                                  final toothNo = _estimateToothNumber(
+                                    xC.toDouble(),
+                                    yC.toDouble(),
+                                  );
+                                  
+                                  // Eğer bir seçim varsa ve bu seçili değilse, gizle
+                                  final isVisible = _selectedPredictionIndex == null ||
+                                      _selectedPredictionIndex == idx;
+                                  
                                   return Positioned(
                                     left: x1,
                                     top: y1,
                                     width: x2 - x1,
                                     height: y2 - y1,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: color,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Align(
-                                        alignment: Alignment.topLeft,
-                                        child: Container(
-                                          color: color.withOpacity(0.85),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 3,
-                                            vertical: 1,
+                                    child: Visibility(
+                                      visible: isVisible,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: color,
+                                            width: _selectedPredictionIndex == idx ? 3.5 : 2.5,
                                           ),
-                                          child: Text(
-                                            'T$toothNo',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.bold,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Align(
+                                          alignment: Alignment.topCenter,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: color.withOpacity(0.95),
+                                              borderRadius: BorderRadius.circular(4),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withOpacity(0.3),
+                                                  blurRadius: 2,
+                                                  spreadRadius: 1,
+                                                ),
+                                              ],
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 3,
+                                            ),
+                                            child: Text(
+                                              toothNo,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                shadows: [
+                                                  Shadow(
+                                                    color: Colors.black,
+                                                    blurRadius: 2,
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1114,43 +1198,57 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Renkli kutular AI tarafından tespit edilen bulgulardır.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _selectedPredictionIndex != null
+                                ? 'Seçili bulgu gösteriliyor. Tümünü görmek için "Tümünü Göster" butonuna tıklayın.'
+                                : 'Renkli kutular AI tarafından tespit edilen bulgulardır. Bir bulguya odaklanmak için aşağıdaki listeden seçin.',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
             // ── Tespit Edilen Bulgular (tam genişlik) ──────────────────────
             Card(
-              elevation: 2,
+              elevation: 3,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: const [
-                        Icon(Icons.bar_chart_outlined, size: 18),
-                        SizedBox(width: 6),
+                        Icon(Icons.bar_chart_outlined, size: 20),
+                        SizedBox(width: 8),
                         Text(
                           'Tespit Edilen Bulgular',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 16,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     // Tablo başlığı
                     Container(
@@ -1162,8 +1260,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         ),
                       ),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 14,
+                        vertical: 10,
                       ),
                       child: Row(
                         children: const [
@@ -1219,8 +1317,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     if (_predictions.isEmpty)
                       Container(
                         decoration: BoxDecoration(
-                          border:
-                              Border.all(color: Colors.grey.withOpacity(0.2)),
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.2),
+                          ),
                           borderRadius: const BorderRadius.only(
                             bottomLeft: Radius.circular(8),
                             bottomRight: Radius.circular(8),
@@ -1230,19 +1329,26 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         child: const Center(
                           child: Column(
                             children: [
-                              Icon(Icons.search_off_outlined,
-                                  size: 40, color: Colors.grey),
+                              Icon(
+                                Icons.search_off_outlined,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
                               SizedBox(height: 8),
                               Text(
                                 'Model hiçbir bulgu tespit etmedi.',
                                 style: TextStyle(
-                                    fontSize: 14, color: Colors.grey),
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
                               ),
                               SizedBox(height: 4),
                               Text(
                                 'Lütfen geçerli bir diş röntgeni görüntüsü yükleyin.',
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.grey),
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -1250,132 +1356,259 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         ),
                       )
                     else
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(8),
-                          bottomRight: Radius.circular(8),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.2),
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(8),
+                            bottomRight: Radius.circular(8),
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        children: _predictions.asMap().entries.map((entry) {
-                          final i = entry.key;
-                          final p = entry.value;
-                          final conf = ((p['confidence'] as num) * 100)
-                              .toStringAsFixed(0);
-                          final xC = ((p['x1'] as num) + (p['x2'] as num)) / 2;
-                          final yC = ((p['y1'] as num) + (p['y2'] as num)) / 2;
-                          final toothNo = _estimateToothNumber(
-                              xC.toDouble(), yC.toDouble());
-                          final isLast = i == _predictions.length - 1;
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: i % 2 == 0
-                                  ? Colors.transparent
-                                  : Colors.grey.withOpacity(0.05),
-                              border: isLast
-                                  ? null
-                                  : Border(
-                                      bottom: BorderSide(
-                                        color: Colors.grey.withOpacity(0.15),
+                        child: Column(
+                          children: _predictions.asMap().entries.map((entry) {
+                            final i = entry.key;
+                            final p = entry.value;
+                            final conf = ((p['confidence'] as num) * 100)
+                                .toStringAsFixed(0);
+                            final xC =
+                                ((p['x1'] as num) + (p['x2'] as num)) / 2;
+                            final yC =
+                                ((p['y1'] as num) + (p['y2'] as num)) / 2;
+                            final toothNo = _estimateToothNumber(
+                              xC.toDouble(),
+                              yC.toDouble(),
+                            );
+                            final isLast = i == _predictions.length - 1;
+                            final isSelected = _selectedPredictionIndex == i;
+                            return InkWell(
+                              onTap: () {
+                                setState(() {
+                                  // Aynı öğeye tıklanırsa seçimi kaldır
+                                  if (_selectedPredictionIndex == i) {
+                                    _selectedPredictionIndex = null;
+                                  } else {
+                                    _selectedPredictionIndex = i;
+                                  }
+                                });
+                              },
+                              onLongPress: () async {
+                                // Uzun basıldığında silme onayı göster
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Bulguyu Sil'),
+                                    content: const Text(
+                                      'Bu bulguyu silmek istediğinizden emin misiniz?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(false),
+                                        child: const Text('İptal'),
                                       ),
-                                    ),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 24,
-                                  child: Text(
-                                    '${i + 1}',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 52,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _getBboxColor(p['disease'])
-                                          .withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      toothNo,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: _getBboxColor(p['disease']),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: BoxDecoration(
-                                          color: _getBboxColor(p['disease']),
-                                          shape: BoxShape.circle,
+                                      ElevatedButton(
+                                        onPressed: () => Navigator.of(context).pop(true),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.error,
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          p['disease'],
-                                          style: const TextStyle(fontSize: 13),
-                                        ),
+                                        child: const Text('Sil'),
                                       ),
                                     ],
                                   ),
+                                );
+                                if (confirm == true) {
+                                  await _deletePrediction(p['id'] as int);
+                                }
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.primary.withOpacity(0.08)
+                                      : (i % 2 == 0
+                                          ? Colors.transparent
+                                          : Colors.grey.withOpacity(0.03)),
+                                  border: isLast
+                                      ? null
+                                      : Border(
+                                          bottom: BorderSide(
+                                            color: Colors.grey.withOpacity(0.12),
+                                          ),
+                                        ),
                                 ),
-                                SizedBox(
-                                  width: 68,
-                                  child: Text(
-                                    '%$conf',
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 24,
+                                    child: Text(
+                                      '${i + 1}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey[600],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                  SizedBox(
+                                    width: 56,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _getBboxColor(
+                                          p['disease'],
+                                        ).withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: _getBboxColor(p['disease'])
+                                              .withOpacity(0.4),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        toothNo,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: _getBboxColor(p['disease']),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 12,
+                                          height: 12,
+                                          decoration: BoxDecoration(
+                                            color: _getBboxColor(p['disease']),
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: _getBboxColor(p['disease'])
+                                                    .withOpacity(0.3),
+                                                blurRadius: 3,
+                                                spreadRadius: 1,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            p['disease'],
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 70,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '%$conf',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 8),
+                                      child: Icon(
+                                        Icons.visibility,
+                                        size: 18,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      size: 20,
+                                    ),
+                                    color: AppColors.error,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Bulguyu Sil'),
+                                          content: const Text(
+                                            'Bu bulguyu silmek istediğinizden emin misiniz?',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.of(context).pop(false),
+                                              child: const Text('İptal'),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.of(context).pop(true),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: AppColors.error,
+                                              ),
+                                              child: const Text('Sil'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        await _deletePrediction(p['id'] as int);
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             // ── PDF Butonu (tam genişlik) ───────────────────────────────────
             SizedBox(
-              height: 50,
+              height: 52,
               child: ElevatedButton.icon(
                 onPressed: _isGeneratingPdf ? null : _generatePdf,
                 style: ElevatedButton.styleFrom(
+                  elevation: 3,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 icon: _isGeneratingPdf
