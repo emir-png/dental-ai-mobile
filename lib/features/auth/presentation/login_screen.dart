@@ -154,10 +154,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.medical_services,
-                              size: 48,
-                              color: Colors.white,
+                            child: const Text(
+                              '🦷',
+                              style: TextStyle(fontSize: 48),
                             ),
                           ),
                           const SizedBox(height: 24),
